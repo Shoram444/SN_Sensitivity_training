@@ -1,3 +1,17 @@
+##############################################################################
+##############################################################################
+##############################################################################
+##
+## DESCRIPTION: This example shows how to load the data, create the SNSensitivityEstimate.DataProcess 
+## objects and obtain the expected background counts for each process.
+##
+##############################################################################
+##############################################################################
+##############################################################################
+
+
+
+
 import Pkg;
 Pkg.activate(".")
 using SNSensitivityEstimate, UnROOT, FHist, CairoMakie, CSV, DataFramesMeta
@@ -63,7 +77,7 @@ processes = [
     SNSensitivityEstimate.DataProcess(
         collect(data_tables[i].sumE), # Here we specify a single variable to be used. In later stages we will use N-dimensional data vectors.
         String(data_info.process[i]), 
-        data_info.is_isgnal[i], 
+        data_info.is_signal[i], 
         data_info.activity[i], 
         data_info.time_s[i], 
         data_info.n_sim[i], 
@@ -136,6 +150,7 @@ let
     
     ylims!(a, 1e-3, 1e5)
     CairoMakie.Legend(f[1,2], elements, labels, title)
+    save("data/out/ex1/stacked_background_histogram.png", f)
     f
 end
 
