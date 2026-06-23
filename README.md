@@ -4,7 +4,7 @@ This repository contains training material to compute background expectations an
 
 ## Before you start: copy large assets
 
-Large files are not tracked in git (`data/` ROOT files and `SNSymlink/SNPackageSysimage.so`).
+Large files are not tracked in git (`data/` ROOT files).
 Before running the training, copy them from:
 
 `/sps/nemo/scratch/mpetro/Sensitivity_training`
@@ -15,9 +15,6 @@ From your local clone root, for example:
 # copy ROOT inputs and metadata index
 cp -r /sps/nemo/scratch/mpetro/Sensitivity_training/data ./
 
-# copy precompiled sysimage (optional but recommended)
-mkdir -p SNSymlink
-cp /sps/nemo/scratch/mpetro/Sensitivity_training/SNSymlink/SNPackageSysimage.so SNSymlink/
 ```
 
 If you prefer, use `rsync` instead of `cp`.
@@ -67,26 +64,9 @@ Notes:
 - `examples/Instantiate.ipynb` is intended to be run first.
 - `Manifest.toml` is pinned to Julia `1.10.3`.
 
-### Optional fast-start with precompiled sysimage
-
-If available to you, you can use the provided sysimage at `SNSymlink/SNPackageSysimage.so` to reduce startup/compile time.
-
-From the repository root:
-
-```bash
-module load julia
-julia --project=. -J SNSymlink/SNPackageSysimage.so
-```
-
-This opens Julia with the project environment plus the precompiled sysimage.
-
-To run scripts with the sysimage:
-
-```bash
-julia --project=. -J SNSymlink/SNPackageSysimage.so examples/ex1_background.jl
-```
-
 ## IJulia setup (for notebook.cc.in2p3.fr)
+
+Recommended approach: install one kernel and use the standard Julia environment.
 
 In Julia:
 
@@ -102,20 +82,9 @@ IJulia.installkernel(
 )
 ```
 
+This kernel is the fallback option and should be the default choice for training.
+
 After installing, restart your Jupyter session on `https://notebook.cc.in2p3.fr/` and select the kernel named `Julia 1.10.3 (Sensitivity_training)`.
-
-Optional kernel with sysimage:
-
-```julia
-using IJulia
-IJulia.installkernel(
-	"Julia 1.10.3 (Sensitivity_training + sysimage)",
-	"--project=$(abspath("."))",
-	"-J",
-	"$(abspath("SNSymlink/SNPackageSysimage.so"))";
-	env = Dict("JULIA_CPU_TARGET" => "generic")
-)
-```
 
 ## Running modes (choose one)
 
@@ -145,11 +114,7 @@ julia --project=. -e 'import Pkg; Pkg.instantiate(); Pkg.precompile()'
 julia --project=. examples/ex1_background.jl
 ```
 
-6. Optional faster startup in VS Code terminal:
-
-```bash
-julia --project=. -J SNSymlink/SNPackageSysimage.so
-```
+6. In notebook UI, select the Julia kernel from the kernel picker.
 
 ### C) Script-only mode (`.jl` files)
 
@@ -256,7 +221,7 @@ println(length(x))
 
 1. Load Julia module and environment (`module load julia`, `source ~/.profile`).
 2. Activate project and instantiate.
-3. Run `examples/Instantiate.ipynb` once.
-4. Continue with background example (`ex1`) then Bayesian example (`ex2`).
-5. Optionally use the sysimage for faster startup.
+3. Install the IJulia kernel first.
+4. Run `examples/Instantiate.ipynb` once.
+5. Continue with background example (`ex1`) then Bayesian example (`ex2`).
 
