@@ -1,3 +1,4 @@
 data
 *.root
 */*.root
+SNSymlink/*
