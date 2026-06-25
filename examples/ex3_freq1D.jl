@@ -12,7 +12,6 @@
 import Pkg;
 Pkg.activate("/sps/nemo/scratch/mpetro/Sensitivity_training/")
 using SNSensitivityEstimate, UnROOT, FHist, CairoMakie, CSV, DataFramesMeta
-using Random, LinearAlgebra, Statistics, Distributions, BAT, BinnedModels, StatsBase, DensityInterface, IntervalSets, SpecialFunctions, ValueShapes
 using Distributions 
 
 # STEP 1: Load the data
