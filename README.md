@@ -2,6 +2,12 @@
 
 This repository contains training material to compute background expectations and Bayesian sensitivity estimates in the SuperNEMO context.
 
+To clone the repository use
+
+```bash
+git clone https://github.com/Shoram444/SN_Sensitivity_training.git
+```
+
 ## Before you start: copy large assets
 
 Large files are not tracked in git (`data/` ROOT files).
