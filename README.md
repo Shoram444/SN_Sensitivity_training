@@ -38,7 +38,6 @@ From your local clone root, for example:
 ```bash
 # copy ROOT inputs and metadata index
 cp -r /sps/nemo/scratch/mpetro/Sensitivity_training/data ./
-
 ```
 
 If you prefer, use `rsync` instead of `cp`.
@@ -55,6 +54,8 @@ module load julia
 julia --version
 ```
 
+**This should install version 1.10.3**
+
 On CC clusters with heterogeneous CPUs, set a generic CPU target for precompilation by adding this line to `~/.profile`:
 
 ```bash
@@ -69,20 +70,24 @@ source ~/.profile
 
 ### 3.2 Julia on own PC
 Go to https://github.com/JuliaLang/juliaup
+Install `juliaup` (julia isntaller) and with it julia v1.10.3.
 
 **windows** 
 ```bash
 winget install --name Julia --id 9NJNWW8PVKMN -e -s msstore
+juliapup add 1.10.3
 ```
 
 **linux/mac**
 ```bash
 curl -fsSL https://install.julialang.org | sh
+juliapup add 1.10.3
 ```
 
 **homebrew**
 ```bash
 brew install juliaup
+juliapup add 1.10.3
 ```
 
 
@@ -100,13 +105,15 @@ Notes:
 - `examples/Instantiate.ipynb` is intended to be run first.
 - `Manifest.toml` is pinned to Julia `1.10.3`.
 
+While we wait we go over presentations: [#6090-v1](https://nile.hep.utexas.edu/cgi-bin/DocDB/ut-nemo/private/ShowDocument?docid=6090)
+
 ## 5. IJulia setup (for notebook.cc.in2p3.fr)
 
 For learning I find it best to use the jupyter notebooks. Although everything can be done via simple `.jl` scripts in equivalent way.
 
 Install kernel for this repository use:
 
-Open julia REPL by running
+Open julia REPL (Read-Eval-Print Loop -- julia terminal, equivalent to root interactive REPL) by running
 
 ```bash
 julia
@@ -126,6 +133,7 @@ IJulia.installkernel(
 )
 ```
 
+
 After installing, restart your Jupyter session on `https://notebook.cc.in2p3.fr/` and select the kernel named `Julia 1.10.3 (Sensitivity_training)`.
 
 **Now we are ready to run the examples**
@@ -138,6 +146,10 @@ Users do not have to use `https://notebook.cc.in2p3.fr/`.
 
 ### A) CC notebook server (Jupyter)
 
+- In the notebook server, by default, you only have access to your `pbs` directory. To reach `/sps/nemo/scratch/yourname/` directory, simply create a `symlink` to the directory, run:
+```bash
+ln -s /sps/nemo/scratch/yourname/ ~/sps_yourname
+```
 - Use the IJulia kernel steps above.
 - Open notebooks in `examples/` and run in order.
 
@@ -161,6 +173,8 @@ julia --project=. examples/ex1_background.jl
 ```
 
 6. In notebook UI, select the Julia kernel from the kernel picker.
+
+The installed kernel from step 5. can be found in `$HOME/.local/share/jupyter/kernels/` 
 
 ### C) Script-only mode (`.jl` files)
 
@@ -225,7 +239,7 @@ Runtime note:
 
 - MCMC parts are compute-heavy and can take significant time.
 
-### 3) `examples/ex3_freq1D.ipynb`
+### 4) `examples/ex3_freq1D.ipynb`
 
 Purpose:
 
@@ -242,18 +256,29 @@ Key outputs produced by this workflow:
 - `data/out/ex3/best_roi_plot.png`
 
 
-### 4) `examples/ex4_freqND.ipynb`
+### 5) `examples/ex4_freqND.ipynb`
 
 Purpose:
 
 - Start from the same data-loading stage as `ex1`.
-- 
+- Define n variable to use and their phase-space
+- Create `DataProcessND` - a new data structure which holds N-dimensional data used for ND optimization
+- Evaluate trial ND ROI and calculate corresponding sensitivity
+- Create optimization procedure and run it
+- Extract optimized results
+
+Key outputs produced by this workflow:
+
+- `data/out/ex4/best_roi_plot.png` 
+
 
 ## Recommended execution order
 
 1. `examples/Instantiate.ipynb`
 2. `examples/ex1_background.ipynb`
 3. `examples/ex2_bayes.ipynb`
+3. `examples/ex3_freq1D.ipynb`
+3. `examples/ex4_freqND.ipynb`
 
 ## Path note
 
