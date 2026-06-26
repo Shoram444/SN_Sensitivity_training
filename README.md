@@ -2,13 +2,31 @@
 
 This repository contains training material to compute background expectations and Bayesian sensitivity estimates in the SuperNEMO context.
 
+## Repository contents
+
+- `data/`: input ROOT files and `data_info.csv` index.
+- `examples/Instantiate.ipynb`: environment bootstrap notebook (activate, instantiate, precompile).
+- `examples/ex1_background.ipynb`: expected background workflow and basic outputs.
+- `examples/ex2_bayes.ipynb`: Bayesian fit and sensitivity workflow.
+- `examples/ex2_background.jl`, `examples/ex2_bayes.jl`: script versions of the notebook examples.
+- `examples/ex3_freq1D.jl`, `examples/ex3_freq1D.jl`: Frequentist 1D example
+- `examples/ex4_freqND.jl`, `examples/ex4_freqND.jl`: Frequentist ND example
+
+
+# First steps:
+
+## 1. Clone repository to your sps scratch
+
 To clone the repository use
 
 ```bash
+cd /sps/nemo/scratch/MY_NAME/PATH_TO_WHERE_YOU_WANT_ME
 git clone https://github.com/Shoram444/SN_Sensitivity_training.git
 ```
 
-## Before you start: copy large assets
+## 2. Copy example data files to your directory
+
+Before you start: copy large assets
 
 Large files are not tracked in git (`data/` ROOT files).
 Before running the training, copy them from:
@@ -25,15 +43,10 @@ cp -r /sps/nemo/scratch/mpetro/Sensitivity_training/data ./
 
 If you prefer, use `rsync` instead of `cp`.
 
-## Repository contents
 
-- `data/`: input ROOT files and `data_info.csv` index.
-- `examples/Instantiate.ipynb`: environment bootstrap notebook (activate, instantiate, precompile).
-- `examples/ex1_background.ipynb`: expected background workflow and basic outputs.
-- `examples/ex2_bayes.ipynb`: Bayesian fit and sensitivity workflow.
-- `examples/ex1_background.jl`, `examples/ex2_bayes.jl`: script versions of the notebook examples.
+## 3. Install julia on CC or your own computer
 
-## Julia setup on CC / SLURM
+### 3.1 Julia setup on CC / SLURM
 
 Load Julia from modules:
 
@@ -54,15 +67,32 @@ Then reload your profile in each new shell (or log out/in):
 source ~/.profile
 ```
 
-## First-time environment initialization
+### 3.2 Julia on own PC
+Go to https://github.com/JuliaLang/juliaup
 
-Run either the `examples/Instantiate.ipynb` notebook or the equivalent Julia commands below:
+**windows** 
+```bash
+winget install --name Julia --id 9NJNWW8PVKMN -e -s msstore
+```
 
-```julia
-import Pkg
-Pkg.activate(".")
-Pkg.instantiate()
-Pkg.precompile()
+**linux/mac**
+```bash
+curl -fsSL https://install.julialang.org | sh
+```
+
+**homebrew**
+```bash
+brew install juliaup
+```
+
+
+## 4. First-time environment initialization
+
+To install all the dependencies and start the project (this may take some 5-10 minutes)
+
+```bash
+cd PATH_TO_THIS_DIRECTORY
+julia --project=. examples/Instantiate.jl
 ```
 
 Notes:
@@ -70,11 +100,19 @@ Notes:
 - `examples/Instantiate.ipynb` is intended to be run first.
 - `Manifest.toml` is pinned to Julia `1.10.3`.
 
-## IJulia setup (for notebook.cc.in2p3.fr)
+## 5. IJulia setup (for notebook.cc.in2p3.fr)
 
-Recommended approach: install one kernel and use the standard Julia environment.
+For learning I find it best to use the jupyter notebooks. Although everything can be done via simple `.jl` scripts in equivalent way.
 
-In Julia:
+Install kernel for this repository use:
+
+Open julia REPL by running
+
+```bash
+julia
+```
+
+Then inside REPL:
 
 ```julia
 import Pkg
@@ -88,9 +126,11 @@ IJulia.installkernel(
 )
 ```
 
-This kernel is the fallback option and should be the default choice for training.
-
 After installing, restart your Jupyter session on `https://notebook.cc.in2p3.fr/` and select the kernel named `Julia 1.10.3 (Sensitivity_training)`.
+
+**Now we are ready to run the examples**
+
+-------
 
 ## Running modes (choose one)
 
@@ -131,9 +171,10 @@ julia --project=. examples/ex1_background.jl
 julia --project=. examples/ex2_bayes.jl
 ```
 
+----
 ## Notebook guide
 
-### 1) `examples/Instantiate.ipynb`
+### 1) `examples/Instantiate.ipynb` or `examples/Instantiate.jl` 
 
 Purpose:
 
@@ -145,7 +186,7 @@ Recommended use:
 
 - Run this notebook before running any other example notebook.
 
-### 2) `examples/ex1_background.ipynb`
+### 2) `examples/ex1_background.ipynb` or `examples/ex1_background.jl`
 
 Purpose:
 
@@ -179,9 +220,34 @@ Key outputs produced by this workflow:
 - `data/out/ex2/fit_result.png`
 - `data/out/ex2/sensitivity_distribution.png`
 
+
 Runtime note:
 
 - MCMC parts are compute-heavy and can take significant time.
+
+### 3) `examples/ex3_freq1D.ipynb`
+
+Purpose:
+
+- Start from the same data-loading stage as `ex1`.
+- Apply analysis cuts (`sumE`, `dy`, `dz`, `Pint`, `Pext`).
+- Calculate sensitivity with `my_roi` (your own proposal for ROI)
+- Build map of the sensitivity per ROI in the selected single channel
+- Calculate the best obtainable sensitivity
+
+Key outputs produced by this workflow:
+
+- `data/out/ex3/my_roi_plot.png`
+- `data/out/ex3/frequentist_sensitivity_map.png`
+- `data/out/ex3/best_roi_plot.png`
+
+
+### 4) `examples/ex4_freqND.ipynb`
+
+Purpose:
+
+- Start from the same data-loading stage as `ex1`.
+- 
 
 ## Recommended execution order
 
