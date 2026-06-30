@@ -1,5 +1,16 @@
-data
+data/*.root
+data/mathis_data_info.csv
+data/mathis_nsim_info.tsv
+data/create_mathis_csv.jl
+data/out/*
+data/mathis_data_info.csv
+data/mathis_nsim_info.tsv
+data/create_mathis_csv.jl
+
+
 *.root
 */*.root
+
 SNSymlink/*.so
+
 Job42.cpp

@@ -1,0 +1,6 @@
+file_name,process,is_signal,activity,amount,time_s,n_sim
+Bi214_foil_bulk.root,Bi214_foil_bulk,false,1.0e-5,6.25,9.019296e7,1.0e8
+Bi214_wire_surface.root,Bi214_wire_surface,false,0.00015,15.0,9.019296e7,1.0e8
+Tl208_foil_bulk.root,Tl208_foil_bulk,false,2.0e-6,6.25,9.019296e7,1.0e8
+bb0nu_foil_bulk.root,bb0nu_foil_bulk,true,1.615770810053139e-9,6.25,9.019296e7,1.0e7
+bb_foil_bulk.root,bb_foil_bulk,false,0.0018593450058148897,6.25,9.019296e7,1.0e8
