@@ -18,7 +18,7 @@ phase = "phase_3"
 
 selected_files = @chain data_info begin
     @subset :phase .== phase
-    @subset .!occursin.("bb0nu", :file_path)
+    # @subset .!occursin.("bb0nu", :file_path)
     @subset .!occursin.("reduces", :file_path) 
 end
 # manually add nu0bb path because that's not in reduced files
