@@ -1,25 +1,12 @@
-
+#### 
+#### WORK IN PROGRESS
+####
 import Pkg;
 Pkg.activate("/sps/nemo/scratch/mpetro/Sensitivity_training/")
 using SNSensitivityEstimate, UnROOT, FHist, CairoMakie, CSV, DataFramesMeta
 using Random, LinearAlgebra, Statistics, Distributions, BAT, BinnedModels, StatsBase, DensityInterface, IntervalSets, SpecialFunctions, ValueShapes
 using Distributions, ColorSchemes
 
-# Local helper: apply cuts only for variables that exist in `roi`.
-# This lets `var_names` include extra branches for diagnostics/topological studies.
-function filter_data_roi_optional(data::LazyTree, varNames::Vector{String}, roi::NamedTuple)
-    cols = NamedTuple(Symbol(n) => collect(getproperty(data, Symbol(n))) for n in varNames)
-    mask = trues(length(data))
-    for n in varNames
-        s = Symbol(n)
-        if haskey(roi, s)
-            col = cols[s]
-            lo, hi = roi[s]
-            @. mask &= (col > lo) & (col < hi)
-        end
-    end
-    data[mask]
-end
 
 # STEP 1: Load the data
 
@@ -34,6 +21,8 @@ selected_files = @chain data_info begin
     @subset .!occursin.("bb0nu", :file_path)
     @subset .!occursin.("reduces", :file_path) 
 end
+# manually add nu0bb path because that's not in reduced files
+append!(selected_files, data_info[data_info.file_path .== "data/mathis_files/bb0nu/phase_0/simu_0/rec_bb0nu_0_0.root", :])
 
 
 data_files = [UnROOT.ROOTFile(file_path) for file_path in selected_files.file_path] 
@@ -48,16 +37,15 @@ var_names = [
     "diff_time_elec",
     "energy_elec_1",
     "energy_elec_2",
-    # Optional branches for additional topological cuts:
     "hit_the_same_calo_hit",
     "closest_gamma",
     "closest_elec",
     "closest_track",
     "closest_time_track",
-    "num_om_elec_f",
     "has_kinks",
+    "num_om_elec_f",
     "vertex_3D_start_y",
-    "vertex_3D_start_z",
+    "vertex_3D_start_z"
     ]
 
 data_tables = [UnROOT.LazyTree(data_file, tree_name, var_names) for data_file in data_files] 
@@ -75,7 +63,7 @@ var_bounds = (
 )
 
 # Apply bounds only for keys present in `var_bounds`.
-filtered_data_tables = [filter_data_roi_optional(table, var_names, var_bounds) for table in data_tables]
+filtered_data_tables = [SNSensitivityEstimate.filter_data(table, var_names, var_bounds) for table in data_tables]
 
 
 # Apply additional topological cuts and store filtered tables back.
@@ -148,7 +136,7 @@ function HistogramData(process::SNSensitivityEstimate.DataProcess)
     HistogramData(hist, process.isotopeName, process.signal)
 end
 
-all_histograms = HistogramData.(processes)
+all_bkg_histograms = [HistogramData(process) for process in processes if !process.signal]
 
 function merge_hist_by_keyword(histograms::Vector{HistogramData}, keyword::String, merge_name::String)
     merged_hist = FHist.Hist1D(;binedges = histograms[1].hist.binedges)
@@ -166,12 +154,14 @@ function merge_hist_by_keyword(histograms::Vector{HistogramData}, keyword::Strin
     return HistogramData(merged_hist, merge_name, is_signal)
 end
 
-pmt_hists = merge_hist_by_keyword(all_histograms, "pmt", "pmt")
-other_histos = filter(hist -> !occursin("pmt", hist.name), all_histograms)
+pmt_hists = merge_hist_by_keyword(all_bkg_histograms, "pmt", "pmt")
+other_histos = filter(hist -> !occursin("pmt", hist.name), all_bkg_histograms)
 all_histos = vcat(other_histos, [pmt_hists])
 
 let
-    colors = cgrad(:managua100, length(all_histograms); categorical=true)
+    colors = cgrad(:managua100, length(all_histos); categorical=true)
+    histos = [hist.hist for hist in all_histos]
+
     f = CairoMakie.Figure(size = (1000, 600))
     a = CairoMakie.Axis(
         f[1, 1], 
@@ -181,12 +171,12 @@ let
         # ylabel = "log of expected counts", 
         # yscale = log10
         )
-    p = CairoMakie.hist!(a, sum(all_histograms), color = colors[1])
-    for i in length(all_histograms):-1:1
-        CairoMakie.hist!(a, sum(all_histograms[1:i]), color = colors[i])
+    p = CairoMakie.hist!(a, sum(histos), color = colors[1])
+    for i in length(histos):-1:1
+        CairoMakie.hist!(a, sum(histos[1:i]), color = colors[i])
     end
 
-    labels = [String(p.isotopeName) for p in processes]
+    labels = [String(p.name) for p in all_histos]
     elements = [CairoMakie.PolyElement(polycolor = colors[i]) for i in 1:length(labels)]
     title = "Processes"
     
@@ -230,14 +220,14 @@ end
 
 
 
-for i=1:length(all_histograms)
-    println("i: $i, process: ", processes[i].isotopeName, ", n = ", integral(all_histograms[i]), ",  activity = ", processes[i].activity, " Bq", " n_pass = ", length(processes[i].dataVector))
+for i=1:length(processes)
+    println("i: $i, process: ", processes[i].isotopeName, ", n = ", integral(get_bkg_counts_1D(processes[i])), ",  activity = ", processes[i].activity, " Bq", " n_pass = ", length(processes[i].dataVector))
 end
 
-println("Total expected counts: ", integral(sum(all_histograms)))
+println("Total expected counts: ", integral(sum(get_bkg_counts_1D.(processes))))
 println("\n\n\n")
 
-for i=1:length(all_histograms)
+for i=1:length(processes)
     n_pass = length(processes[i].dataVector)
     eff = n_pass/processes[i].nTotalSim
     a = processes[i].activity
@@ -245,4 +235,19 @@ for i=1:length(all_histograms)
     n_exp_day = round(eff*a*t, digits = 2)
     println("i: $i, process: ", processes[i].isotopeName, ", n_exp_day = ", n_exp_day, ", n_pass = ", n_pass)
 end
-println("Total expected counts per day: ", round(integral(sum(all_histograms))*(1/2.86/365), digits = 2))
+println("Total expected counts per day: ", round(integral(sum(get_bkg_counts_1D.(processes)))*(1/2.86/365), digits = 2))
+
+
+# Sensitivity
+# Pick signal
+signal = get_process("bb0nu", processes)[1]
+background = [p for p in processes if !p.signal]
+
+α = 1.65
+
+t12MapESum = get_tHalf_map(SNparams, α, signal, background...; approximate ="table")
+best_t12ESum = get_max_bin(t12MapESum)
+expBkgESum = get_bkg_counts_ROI(best_t12ESum, background...)
+effbb = lookup(signal, best_t12ESum)
+best_sens = get_tHalf(SNparams, effbb, expBkgESum, α; approximate="table")
+ThalfbbESum = round(best_sens, sigdigits=3)
