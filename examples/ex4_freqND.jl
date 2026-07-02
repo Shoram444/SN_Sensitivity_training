@@ -83,7 +83,7 @@ signal_name = "bb0nu_foil_bulk"
 signal_process = get_process(signal_name, processes_nd)[1]
 
 background_names = data_info.process[data_info.process .!= signal_name]
-background_process = [SNSensitivityEstimate.get_process(String(name), processes_nd)[1] for name in background_names]
+background_processes = [SNSensitivityEstimate.get_process(String(name), processes_nd)[1] for name in background_names]
 
 
 
@@ -142,10 +142,10 @@ upper_bound = [x[2] for x in searchRange] .|> float
 # The full list of parameters can be found in https://jmejia8.github.io/Metaheuristics.jl/stable/api/#Metaheuristics.Options
 options = Options(;
     # x_tol = 1.0, # tolerance in position space
-    # f_tol = 1e-5, # tolerance in function value
+    f_tol = 1e-3, # tolerance in function value
     time_limit = 5*60.0, # time limit in seconds, must include .0 to be a Float64 value, doesn't take integers
     verbose = true, # verbosity on
-    # iterations = 15, # number of iterations / generations
+    iterations = 15, # number of iterations / generations
 )
 
 # Set up boxconstraints bounds - just the lower and upper bounds we defined before
@@ -253,4 +253,7 @@ let
     save("/sps/nemo/scratch/mpetro/Sensitivity_training/data/out/ex4/best_roi_plot.png", f, px_per_unit = 2)
     f
 end
+
+
+
 
