@@ -18,7 +18,6 @@ phase = "phase_3"
 
 selected_files = @chain data_info begin
     @subset :phase .== phase
-    # @subset .!occursin.("bb0nu", :file_path)
     @subset .!occursin.("reduces", :file_path) 
 end
 # manually add nu0bb path because that's not in reduced files
@@ -238,7 +237,7 @@ end
 println("Total expected counts per day: ", round(integral(sum(get_bkg_counts_1D.(processes)))*(1/2.86/365), digits = 2))
 
 
-# Sensitivity
+# Sensitivity 1D
 # Pick signal
 signal = get_process("bb0nu", processes)[1]
 background = [p for p in processes if !p.signal]
@@ -251,3 +250,106 @@ expBkgESum = get_bkg_counts_ROI(best_t12ESum, background...)
 effbb = lookup(signal, best_t12ESum)
 best_sens = get_tHalf(SNparams, effbb, expBkgESum, α; approximate="table")
 ThalfbbESum = round(best_sens, sigdigits=3)
+
+# Sensitivity ND
+# define variables to use
+var_names_nd = [ 
+    "energy_elec_sum", 
+    "angle_3D_between_ep_em", 
+    "delta_y_elec",
+    "delta_z_elec",
+    "diff_time_elec",
+    "energy_elec_1",
+    "energy_elec_2",
+    ]
+
+# Next we define the boundaries of the variables in the search space. These boundaries will be used to define the search space for the optimization algorithm.
+var_bounds_nd = (
+    energy_elec_sum = (0.300, 4.00),
+    angle_3D_between_ep_em = (0, 180),
+    delta_y_elec = (0, 200),
+    delta_z_elec = (0, 200),
+    diff_time_elec = (0, 10),
+    energy_elec_1 = (0, 3.500),
+    energy_elec_2 = (0, 3.500),
+)
+
+
+# Default search resolution (adjust if needed)
+var_steps_nd = (
+    energy_elec_sum = 0.05, 
+    angle_3D_between_ep_em = 5.0,
+    delta_y_elec = 5.0,
+    delta_z_elec = 5.0,
+    diff_time_elec = 0.01,
+    energy_elec_1 = 0.05,
+    energy_elec_2 = 0.05,
+)
+
+selected_tables_nd = [UnROOT.LazyTree(data_file, tree_name, var_names) for data_file in data_files] 
+
+
+filtered_data_tables = [SNSensitivityEstimate.filter_data(table, var_names_nd, var_bounds_nd) for table in selected_tables_nd]
+
+
+# Apply additional topological cuts and store filtered tables back.
+for i in eachindex(filtered_data_tables_nd)
+    table = filtered_data_tables_nd[i]
+    cut_vertex_dist = sqrt.(table.delta_y_elec .* table.delta_y_elec .+ table.delta_z_elec .* table.delta_z_elec) .>= 100
+    cut_same_calo   = table.hit_the_same_calo_hit .== 1
+    cut_gam         = abs.(table.closest_gamma) .<= 50
+    cut_elec        = abs.(table.closest_elec) .<= 25
+    cut_track       = abs.(table.closest_track) .< 200
+    cut_ttrack      = abs.(table.closest_time_track) .< 10
+    cut_kinks       = table.has_kinks .== 1
+
+    n_evt = length(table)
+    cut_om_size = [length(table.num_om_elec_f[j]) != 2 for j in 1:n_evt]
+
+    cut_om_range = falses(n_evt)
+    for j in 1:n_evt
+        if !cut_om_size[j]
+            om0 = table.num_om_elec_f[j][1]
+            om1 = table.num_om_elec_f[j][2]
+            cut_om_range[j] = (om0 > 520 || om1 > 520)
+        end
+    end
+
+    cut_vertex_region = falses(n_evt)
+    for j in 1:n_evt
+        if !cut_om_size[j] && !cut_om_range[j] && length(table.vertex_3D_start_y[j]) >= 2 && length(table.vertex_3D_start_z[j]) >= 2
+            y_mid = 0.5 * (table.vertex_3D_start_y[j][1] + table.vertex_3D_start_y[j][2])
+            z_mid = 0.5 * (table.vertex_3D_start_z[j][1] + table.vertex_3D_start_z[j][2])
+
+            cut_vertex_region[j] = (
+                ((y_mid - 1180) / 60)^2 + ((z_mid + 850) / 140)^2 <= 1 ||
+                ((y_mid - 1144) / 25)^2 + ((z_mid - 196) / 40)^2 <= 1 ||
+                ((y_mid - 1114) / 25)^2 + ((z_mid + 257) / 40)^2 <= 1 ||
+                abs(y_mid) > 2360 || abs(z_mid) > 1340
+            )
+        end
+    end
+
+    # `cut_om_good` intentionally omitted here: OM quality map/helper is defined externally.
+    keep = .!(cut_vertex_dist .| cut_same_calo .| cut_gam .| cut_elec .| cut_track .| cut_ttrack .| cut_kinks .| cut_om_size .| cut_om_range .| cut_vertex_region)
+    filtered_data_tables_nd[i] = table[keep]
+end
+
+
+# STEP 2: Create DataProcessND objects
+# We do not filter data here, because that is the role of the optimization process. 
+# In the ND example we no longer work with DataProcess object, but rather DataProcessND objects, which are designed to work with N-dimensional data vectors.
+
+processes_nd = [
+    SNSensitivityEstimate.DataProcessND(
+        selected_tables_nd[i], # Here we pass the whole data-set
+        String(data_info.process[i]), 
+        data_info.is_signal[i], 
+        data_info.activity[i], 
+        data_info.time_s[i], 
+        data_info.n_sim[i], 
+        var_bounds_nd, # bounds for each variable
+        data_info.amount[i], 
+        var_names_nd, # variable names
+    ) for i in 1:length(selected_tables_nd)
+]

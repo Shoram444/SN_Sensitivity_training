@@ -4,10 +4,10 @@ phase_1,bb,false,data/mathis_files/bb/phase_1/bb_phase_1.root,0.0113605979855289
 phase_2,bb,false,data/mathis_files/bb/phase_2/bb_phase_2.root,0.011360597985528976,1.0,9.019296e7,1.2274785e6,30000000
 phase_3,bb,false,data/mathis_files/bb/phase_3/bb_phase_3.root,0.011360597985528976,1.0,9.019296e7,6.615636e6,30000000
 phase_4,bb,false,data/mathis_files/bb/phase_4/bb_phase_4.root,0.011360597985528976,1.0,9.019296e7,1.3409078e7,30000000
-phase_0,bb0nu,true,data/mathis_files/bb0nu/phase_0/bb0nu_phase_0.root,1.0,1.0,9.019296e7,3.2755212e6,10000000
-phase_1,bb0nu,true,data/mathis_files/bb0nu/phase_1/bb0nu_phase_1.root,1.0,1.0,9.019296e7,3.2755212e6,10000000
-phase_2,bb0nu,true,data/mathis_files/bb0nu/phase_2/bb0nu_phase_2.root,1.0,1.0,9.019296e7,3.2755212e6,10000000
-phase_3,bb0nu,true,data/mathis_files/bb0nu/phase_3/bb0nu_phase_3.root,1.0,1.0,9.019296e7,3.2755212e6,10000000
+phase_0,bb0nu,true,data/mathis_files/bb0nu/phase_0/simu_0/rec_bb0nu_0_0.root,1.0,1.0,9.019296e7,3.2755212e6,1000000
+phase_1,bb0nu,true,data/mathis_files/bb0nu/phase_1/simu_0/rec_bb0nu_1_0.root,1.0,1.0,9.019296e7,3.2755212e6,1000000
+phase_2,bb0nu,true,data/mathis_files/bb0nu/phase_2/simu_0/rec_bb0nu_2_0.root,1.0,1.0,9.019296e7,3.2755212e6,1000000
+phase_3,bb0nu,true,data/mathis_files/bb0nu/phase_3/simu_0/rec_bb0nu_3_0.root,1.0,1.0,9.019296e7,3.2755212e6,1000000
 phase_0,bi_5_pmt,false,data/mathis_files/bi_5_pmt/phase_0/bi_5_pmt_phase_0.root,24.712202609363008,1.0,9.019296e7,3.2755212e6,5000000000
 phase_1,bi_5_pmt,false,data/mathis_files/bi_5_pmt/phase_1/bi_5_pmt_phase_1.root,24.712202609363008,1.0,9.019296e7,2.2166779e6,5000000000
 phase_2,bi_5_pmt,false,data/mathis_files/bi_5_pmt/phase_2/bi_5_pmt_phase_2.root,24.712202609363008,1.0,9.019296e7,1.2274785e6,5000000000
