@@ -175,6 +175,7 @@ let
     f
 end
 
+
 # STEP 5: Calculate the sensitivity of single pseudo-experiment using the posterior samples.
 # The sensitivity is defined as the 90% quantile of the posterior distribution of the signal
 # The sensitivity is calculated using the SNSensitivityEstimate.calculate_sensitivity function, which takes the posterior samples and the signal histogram as arguments.

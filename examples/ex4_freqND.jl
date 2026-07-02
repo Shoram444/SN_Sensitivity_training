@@ -46,6 +46,16 @@ var_bounds = (
     lPext = (0, 100.0),
 )
 
+# Default search resolution (adjust if needed)
+var_steps = (
+    sumE = 100.0, 
+    phi = 5.0,
+    dy = 5.0,
+    dz = 5.0,
+    lPint = 0.01,
+    lPext = 0.05,
+)
+
 selected_tables = [UnROOT.LazyTree(data_file, tree_name, var_names) for data_file in data_files] 
 
 
@@ -90,6 +100,8 @@ my_roi = (
 # there are 2 approximation methods "table" and "formula", 
 # table is more precise but takes longer to calculate, 
 # formula is fine for quick tests
+α = 1.64485362695147
+
 my_sensitivity = get_sensitivityND(SNparams, α, processes_nd, my_roi; approximate="table") 
 
 
@@ -131,7 +143,7 @@ upper_bound = [x[2] for x in searchRange] .|> float
 options = Options(;
     # x_tol = 1.0, # tolerance in position space
     # f_tol = 1e-5, # tolerance in function value
-    time_limit = 10*20.0, # time limit in seconds, must include .0 to be a Float64 value, doesn't take integers
+    time_limit = 5*60.0, # time limit in seconds, must include .0 to be a Float64 value, doesn't take integers
     verbose = true, # verbosity on
     # iterations = 15, # number of iterations / generations
 )
