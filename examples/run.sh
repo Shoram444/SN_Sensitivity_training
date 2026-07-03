@@ -37,8 +37,8 @@ export JULIA_CPU_TARGET="generic"
 echo "Running script: $SCRIPT"
 
 module load julia 
-# julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no $SCRIPT 
-julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no -J $PROJECT_DIR/SNSymlink/SNPackageSysimage.so $SCRIPT 
+julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no $SCRIPT 
+# julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no -J $PROJECT_DIR/SNSymlink/SNPackageSysimage.so $SCRIPT 
 
 echo "Finished running script: $SCRIPT"
 
