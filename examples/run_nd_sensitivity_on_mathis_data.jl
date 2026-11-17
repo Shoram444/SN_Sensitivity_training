@@ -158,7 +158,7 @@ processes_nd = [
         String(selected_files.name[i]), 
         selected_files.is_signal[i], 
         selected_files.activity_bq[i], 
-        selected_files.time_s[i], 
+        SNparams["t"],
         selected_files.nb_events[i], 
         var_bounds_nd, # bounds for each variable
         data_info.amount[i], 
@@ -170,7 +170,7 @@ processes_nd = [
 
 signal_process = get_process(signal_name, processes_nd)[1]
 
-background_names = data_info.name[data_info.name .!= signal_name .&& data_info.is_signal .== false]
+background_names = unique(selected_files.name[selected_files.name .!= signal_name .&& selected_files.is_signal .== false])
 background_processes = [SNSensitivityEstimate.get_process(String(name), processes_nd)[1] for name in background_names]
 
 const PROCESSES_ND = vcat(signal_process, background_processes)

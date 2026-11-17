@@ -1,0 +1,132 @@
+# Paths are relative to the repository root, not the submission directory.
+
+[slurm]
+job_name = "nd-sensitivity"
+partition = "htc"
+licenses = "sps"
+time = "1-16:00:00"
+mem = "32G"
+cpus_per_task = 6
+
+[runtime]
+julia_module = "julia"
+julia_executable = "julia"
+cpu_target = "generic"
+sysimage = ""
+overhead_seconds = 600.0
+
+[data]
+metadata_csv = "scripts/mathis_analysis_info.csv"
+phase = "phase_3"
+signal = "bb0nuM1"
+exposure_seconds = 90192960.0
+tree = "Event"
+cut_set = "nd_baseline"
+activity_source = "metadata"
+
+[optimization]
+algorithm = "PSO"
+time_limit_seconds = 10.0
+seed = 42
+alpha = 1.64485362695147
+search_method = "formula"
+final_method = "table"
+
+[cut_sets.nd_baseline]
+value_mode = "absolute"
+
+[cut_sets.nd_baseline.fixed]
+vertex_distance_lt_mm = 300.0
+reject_same_calo = true
+closest_gamma_abs_gt_mm = 50.0
+closest_electron_abs_gt_mm = 25.0
+closest_track_abs_ge_mm = 200.0
+closest_track_time_abs_ge_ns = 10.0
+reject_kinks = true
+required_om_count = 2
+om_max_id = 520
+reject_vertex_hotspots = true
+vertex_hotspots = [
+    { y_mm = 1180.0, z_mm = -850.0, radius_y_mm = 60.0, radius_z_mm = 140.0 },
+    { y_mm = 1144.0, z_mm = 196.0, radius_y_mm = 25.0, radius_z_mm = 40.0 },
+    { y_mm = 1114.0, z_mm = -257.0, radius_y_mm = 25.0, radius_z_mm = 40.0 },
+]
+vertex_abs_y_le_mm = 2360.0
+vertex_abs_z_le_mm = 1340.0
+om_quality_enabled = false
+om_quality_file = ""
+
+[cut_sets.nd_baseline.variables.energy_elec_sum]
+role = "optimize"
+bounds = [2.4, 3.5]
+# 0.1 instead of legacy 0.2 keeps both bounds and initial ROI on grid.
+step = 0.1
+initial_roi = [2.4, 3.1]
+unit = "MeV"
+
+[cut_sets.nd_baseline.variables.angle_3D_between_ep_em]
+role = "optimize"
+bounds = [0.0, 180.0]
+step = 5.0
+initial_roi = [0.0, 180.0]
+unit = "deg"
+
+[cut_sets.nd_baseline.variables.delta_y_elec]
+role = "optimize"
+bounds = [0.0, 200.0]
+step = 5.0
+initial_roi = [0.0, 100.0]
+unit = "mm"
+
+[cut_sets.nd_baseline.variables.delta_z_elec]
+role = "optimize"
+bounds = [0.0, 200.0]
+step = 5.0
+initial_roi = [0.0, 140.0]
+unit = "mm"
+
+[cut_sets.nd_baseline.variables.diff_time_elec]
+role = "optimize"
+bounds = [0.0, 5.0]
+step = 0.25
+initial_roi = [0.0, 2.5]
+unit = "ns"
+
+[cut_sets.nd_baseline.variables.energy_elec_1]
+role = "optimize"
+bounds = [0.0, 3.5]
+step = 0.05
+initial_roi = [0.3, 2.9]
+unit = "MeV"
+
+[cut_sets.nd_baseline.variables.energy_elec_2]
+role = "optimize"
+bounds = [0.0, 3.5]
+step = 0.05
+initial_roi = [0.3, 2.9]
+unit = "MeV"
+
+[outputs]
+root = "scripts/out"
+tables = ["sensitivity", "roi", "background_components", "background_groups", "cutflow"]
+plots = ["background_spectrum", "sensitivity_slices"]
+plot_formats = ["pdf", "png"]
+spectrum_variable = "energy_elec_sum"
+spectrum_bounds = [2.4, 3.5]
+spectrum_bin_width = 0.1
+text_summary = true
+
+[outputs.background_groups]
+two_nu = ["bb"]
+source = ["bi_foil", "k", "pa", "tl"]
+radon = ["radon", "radon_surface"]
+pmt = [
+    "bi_pmt", "bi_5_pmt", "bi_g_pmt", "bi_x_pmt",
+    "k_pmt", "k_5_pmt", "k_g_pmt", "k_x_pmt",
+    "tl_pmt", "tl_5_pmt", "tl_g_pmt", "tl_x_pmt",
+]
+
+[validation]
+enabled = false
+measured_data_files = []
+measured_exposure_seconds = 6615636.0
