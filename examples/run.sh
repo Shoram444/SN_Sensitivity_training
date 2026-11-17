@@ -2,13 +2,15 @@
 
 # SLURM options:
 #SBATCH --partition=htc
-#SBATCH --job=test
+#SBATCH --job=0nuM1
 #SBATCH --licenses=sps
 #SBATCH --array=0-0
-#SBATCH --time=0-2
-#SBATCH --mem=24G
-#SBATCH --cpus-per-task=8
+#SBATCH --time=1-16
+#SBATCH --mem=32G
+#SBATCH --cpus-per-task=6
 #SBATCH --output=/sps/nemo/scratch/mpetro/Sensitivity_training/nd_%job_%A_%a.log
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=maros.petro@cvut.cz
 
 
 #################################
@@ -30,17 +32,15 @@
 PROJECT_DIR=/sps/nemo/scratch/mpetro/Sensitivity_training/ # path to where Project.toml file is located (Project.toml file contains all the dependencies for the project)
 SCRIPT=/sps/nemo/scratch/mpetro/Sensitivity_training/examples/run_nd_sensitivity_on_mathis_data.jl # example run script
 
-export JULIA_NUM_THREADS=8 # selec number of threads to use, some tasks can run in parallel so that's good
+export JULIA_NUM_THREADS=6 # selec number of threads to use, some tasks can run in parallel so that's good
 export JULIA_CPU_TARGET="generic"
 
 
 echo "Running script: $SCRIPT"
 
 module load julia 
-julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no $SCRIPT 
-# julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no -J $PROJECT_DIR/SNSymlink/SNPackageSysimage.so $SCRIPT 
+# julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no $SCRIPT 
+julia --project=$PROJECT_DIR -t $JULIA_NUM_THREADS --pkgimages=no -J $PROJECT_DIR/SNSymlink/SNPackageSysimage.so $SCRIPT 
 
 echo "Finished running script: $SCRIPT"
-
-
 

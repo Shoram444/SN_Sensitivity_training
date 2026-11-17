@@ -2001,7 +2001,7 @@ version = "3.7.2"
 
 [[deps.SNSensitivityEstimate]]
 deps = ["BAT", "CSV", "DataFramesMeta", "DensityInterface", "Distributions", "DrWatson", "FFMPEG", "FHist", "MakieCore", "Measurements", "Metaheuristics", "SpecialFunctions", "StatsBase", "UnROOT"]
-git-tree-sha1 = "25c0a0bd1a1877a8bf6b40812b86cd212dfb166e"
+git-tree-sha1 = "c8d37f78b62819a1ad33705aa638a01fa79975dd"
 repo-rev = "main"
 repo-url = "https://github.com/Shoram444/SNSensitivityEstimate.jl.git"
 uuid = "4337d2dd-53cf-40a5-bc43-6e7cc5722bd2"

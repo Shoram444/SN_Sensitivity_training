@@ -5,10 +5,10 @@
 global PROJECT_DIR="/sps/nemo/scratch/mpetro/Sensitivity_training/" # Change this to your project directory
 
 # Select which phase we process
-global signal_name = "bb0nu"
+global signal_name = "bb0nuM1"
 global phase = "phase_3"
-global optimization_time_limit = 3600  # make sure you optimization time limit is about 1hr less than job time limit to account for overhead tasks
-global output_dir = joinpath(PROJECT_DIR, "data", "out", "ex5_$(phase)_results.csv")
+global optimization_time_limit = 24 * 3600  # make sure you optimization time limit is about 1hr less than job time limit to account for overhead tasks
+global output_dir = joinpath(PROJECT_DIR, "data", "out", "$(signal_name)_ex5_phase_$(phase)_sensitivity.csv")
 global α = 1.64485362695147
 
 
@@ -17,6 +17,7 @@ flush(stdout)
 
 using SNSensitivityEstimate, UnROOT, FHist, CSV, DataFramesMeta
 using Distributions, Metaheuristics
+
 
 @info "Packages loaded, loading data..."
 flush(stdout)
@@ -74,7 +75,7 @@ var_bounds_nd = (
     angle_3D_between_ep_em = (0, 180),
     delta_y_elec = (0, 200),
     delta_z_elec = (0, 200),
-    diff_time_elec = (0, 4),
+    diff_time_elec = (-5, 5),
     energy_elec_1 = (0, 3.50),
     energy_elec_2 = (0, 3.50),
 )
@@ -82,11 +83,11 @@ var_bounds_nd = (
 
 # Default search resolution (adjust if needed)
 var_steps_nd = (
-    energy_elec_sum = 0.1, # 100keV
-    angle_3D_between_ep_em = 10.0, # 10 degree
+    energy_elec_sum = 0.20, # 100keV
+    angle_3D_between_ep_em = 5.0, # 10 degree
     delta_y_elec = 5.0, # 5mm
     delta_z_elec = 5.0, # 5mm
-    diff_time_elec = 0.1, # 0.1ns
+    diff_time_elec = 0.25, # 0.25ns
     energy_elec_1 = 0.05, # 50keV
     energy_elec_2 = 0.05, # 50keV
 )
@@ -169,9 +170,10 @@ processes_nd = [
 
 signal_process = get_process(signal_name, processes_nd)[1]
 
-background_names = data_info.name[data_info.name .!= signal_name]
+background_names = data_info.name[data_info.name .!= signal_name .&& data_info.is_signal .== false]
 background_processes = [SNSensitivityEstimate.get_process(String(name), processes_nd)[1] for name in background_names]
 
+const PROCESSES_ND = vcat(signal_process, background_processes)
 
 # define the optimization problem
 
@@ -182,7 +184,7 @@ grid = GridSpec(signal_process, var_steps_nd)
 
 
 # STEP 4.2: Define the optimization problem, we want to minimize the negative sensitivity, which is equivalent to maximizing the sensitivity.
-prob(proposed_indices) = - get_s_to_b(SNparams, α, processes_nd, proposed_indices, grid; approximate="formula") # we use the "formula" approximation here because it is faster, but you can also use "table" if you want more precise results.
+prob(proposed_indices) = - get_s_to_b(SNparams, α, PROCESSES_ND, proposed_indices, grid; approximate="formula") # we use the "formula" approximation here because it is faster, but you can also use "table" if you want more precise results.
 
 
 # The search range is in INDEX units: (0, nsteps) for each ROI edge.
@@ -197,9 +199,10 @@ upper_bound = [x[2] for x in searchRange] .|> float
 options = Options(;
     # x_tol = 1.0, # tolerance in position space
     # f_tol = 1e-4, # tolerance in function value
-    time_limit = float(optimization_time_limit), # time limit in seconds, must include .0 to be a Float64 value, doesn't take integers
+    time_limit = 10.0, 
+    # time_limit = float(optimization_time_limit), # time limit in seconds, must include .0 to be a Float64 value, doesn't take integers
     verbose = true, # verbosity on
-    iterations = 1000, # number of iterations / generations
+    # iterations = 1000, # number of iterations / generations
 )
 
 # Set up boxconstraints bounds - just the lower and upper bounds we defined before
@@ -210,11 +213,11 @@ algo = PSO(;options)
 # initial condition, adjust according to your ideas
 
 x0 = float.([
-    value_to_index(2.700, grid.mins[1], grid.steps[1]; nsteps=grid.nsteps[1]), value_to_index(3.100, grid.mins[1], grid.steps[1]; nsteps=grid.nsteps[1]),  # sumE  -> (2.700, 3.100)MeV
+    value_to_index(2.400, grid.mins[1], grid.steps[1]; nsteps=grid.nsteps[1]), value_to_index(3.100, grid.mins[1], grid.steps[1]; nsteps=grid.nsteps[1]),  # sumE  -> (2.400, 3.100)MeV
     value_to_index(0, grid.mins[2], grid.steps[2]; nsteps=grid.nsteps[2]), value_to_index(180, grid.mins[2], grid.steps[2]; nsteps=grid.nsteps[2]),   # phi    -> (0, 180)deg
     value_to_index(0, grid.mins[3], grid.steps[3]; nsteps=grid.nsteps[3]), value_to_index(100, grid.mins[3], grid.steps[3]; nsteps=grid.nsteps[3]),   # dy    -> (0, 100)mm
     value_to_index(0, grid.mins[4], grid.steps[4]; nsteps=grid.nsteps[4]), value_to_index(140, grid.mins[4], grid.steps[4]; nsteps=grid.nsteps[4]),   # dz    -> (0, 140)mm
-    value_to_index(0, grid.mins[5], grid.steps[5]; nsteps=grid.nsteps[5]), value_to_index(1.5, grid.mins[5], grid.steps[5]; nsteps=grid.nsteps[5]),   # dT    -> (0, 1.5)ns
+    value_to_index(-2.5, grid.mins[5], grid.steps[5]; nsteps=grid.nsteps[5]), value_to_index(2.5, grid.mins[5], grid.steps[5]; nsteps=grid.nsteps[5]),   # dT    -> (-2.5, 2.5)ns
     value_to_index(0.300, grid.mins[6], grid.steps[6]; nsteps=grid.nsteps[6]), value_to_index(2.900, grid.mins[6], grid.steps[6]; nsteps=grid.nsteps[6]),  # E1  -> (0.3, 3.100)MeV
     value_to_index(0.300, grid.mins[7], grid.steps[7]; nsteps=grid.nsteps[7]), value_to_index(2.900, grid.mins[7], grid.steps[7]; nsteps=grid.nsteps[7]),  # E2  -> (0.3, 3.100)MeV
 ])
@@ -243,10 +246,11 @@ flush(stdout)
 # argument), then calculate the precise sensitivity with the "table" method.
 # `res = minimizer(result)` is the best index-vector found above.
 best = get_best_ROI_ND(res, signal_process, grid)
-best_sens = get_sensitivityND(SNparams, α, processes_nd, best; approximate="table")
+best_sens = get_sensitivityND(SNparams, α, PROCESSES_ND, best; approximate="table")
 
 # finally print the result
 println("\n===== BEST RESULT =====")
+println("Signal process = ", signal_name)
 print(best_sens)
 
 # Save results to csv
@@ -258,3 +262,23 @@ df = DataFrame(
     best_eff = [best_sens.signalEff],
 )
 CSV.write(output_dir, df)
+
+
+let
+    best = (
+        energy_elec_sum = (2.4, 2.8), 
+        angle_3D_between_ep_em = (0.0, 180.0), 
+        delta_y_elec = (0.0, 60.0), 
+        delta_z_elec = (0.0, 65.0), 
+        diff_time_elec = (-1.75, 1.5), 
+        energy_elec_1 = (0.35, 2.5), 
+        energy_elec_2 = (0.35, 3.4)
+    )
+
+    best_sens = get_sensitivityND(SNparams, α, PROCESSES_ND, best; approximate="formula")
+
+    # finally print the result
+    println("\n===== BEST RESULT =====")
+    println("Signal process = ", signal_name)
+    print(best_sens)
+end

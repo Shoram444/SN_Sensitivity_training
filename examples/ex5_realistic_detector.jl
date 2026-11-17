@@ -8,6 +8,7 @@ using Random, LinearAlgebra, Statistics, Distributions, BAT, BinnedModels, Stats
 using Distributions, ColorSchemes
 
 
+
 # STEP 1: Load the data
 
 # Start is the same as in ex1_background.jl, we load data and create DataProcess objects. 
@@ -52,13 +53,13 @@ data_tables = [UnROOT.LazyTree(data_file, tree_name, var_names) for data_file in
 
 # define the boundaries of the data-cuts, we use simple Esum >300keV, dy < 100mm, dz < 100mm, Pint > 0.01, Pext < 0.01
 var_bounds = (
-    energy_elec_sum = (0.7, 4),
+    energy_elec_sum = (2.4, 2.8),
     angle_3D_between_ep_em = (0, 180),
-    delta_y_elec = (0, 100),
-    delta_z_elec = (0, 100),
-    diff_time_elec = (-1.5, 1.5),
-    energy_elec_1 = (0.35, 4),
-    energy_elec_2 = (0.35, 4),
+    delta_y_elec = (0, 60),
+    delta_z_elec = (0, 65),
+    diff_time_elec = (-1.75, 1.5),
+    energy_elec_1 = (0.35, 2.5),
+    energy_elec_2 = (0.35, 2.4),
 )
 
 # Apply bounds only for keys present in `var_bounds`.
@@ -160,6 +161,10 @@ all_histos = vcat(other_histos, [pmt_hists])
 let
     colors = cgrad(:managua100, length(all_histos); categorical=true)
     histos = [hist.hist for hist in all_histos]
+    for i in 1:length(histos)
+        println("Process ", all_histos[i].name)
+        println("Integral: ", integral(histos[i]))
+    end
 
     f = CairoMakie.Figure(size = (1000, 600))
     a = CairoMakie.Axis(
@@ -181,7 +186,8 @@ let
     
     ylims!(a, 1e-3, nothing)
     CairoMakie.Legend(f[1,2], elements, labels, title)
-    # save("data/out/ex1/stacked_background_histogram.png", f)
+    save("test_M1_cuts_background_stacked_background_histogram.png", f)
+    # save("data/out/test_M1_cuts_background_stacked_background_histogram.png", f)
     f
 end
 
@@ -213,7 +219,8 @@ let
     
     ylims!(a, 1e-5, nothing)
     CairoMakie.Legend(f[1,2], elements, labels, title)
-    save("data/out/ex5/stacked_background_histogram_per_day_phase_$phase.png", f, px_per_unit = 2)
+    save("stacked_background_histogram_per_day_phase_$phase.png", f, px_per_unit = 2)
+    # save("data/out/ex5/stacked_background_histogram_per_day_phase_$phase.png", f, px_per_unit = 2)
     f
 end
 
@@ -227,6 +234,7 @@ println("Total expected counts: ", integral(sum(get_bkg_counts_1D.(processes))))
 println("\n\n\n")
 
 for i=1:length(processes)
+    processes[i].signal ? continue : nothing
     n_pass = length(processes[i].dataVector)
     eff = n_pass/processes[i].nTotalSim
     a = processes[i].activity
