@@ -121,23 +121,21 @@ skipped; run it on the cluster before extracting production metadata.
 ## Bounded cluster smoke test
 
 Run this before production metadata extraction or submission. Dependencies must
-already be available in the cluster project environment. Set `PROJECT_DIR` as above.
+already be available in the cluster project environment. Submit from the repository
+root, like the existing batch workflow.
 This requests one CPU and 8 GB for at most 10 minutes, excluding queue wait;
 adjust partition/license names if your cluster setup differs.
 
 ```sh
-module load julia root
-srun --partition=htc --licenses=sps --cpus-per-task=1 --mem=8G \
-    --time=00:10:00 bash -s -- "$PROJECT_DIR" <<'SMOKE'
-set -euo pipefail
-PROJECT_DIR=$1
-julia --project="$PROJECT_DIR" --startup-file=no --threads=1 \
-    -e 'Sys.which("root") === nothing && error("ROOT missing on compute node"); include(ARGS[1])' \
-    "$PROJECT_DIR/scripts/test_metadata.jl"
-julia --project="$PROJECT_DIR" --startup-file=no --threads=1 \
-    "$PROJECT_DIR/scripts/test_workflow.jl"
-SMOKE
+cd "$PROJECT_DIR"
+sbatch scripts/smoke_test.sh
 ```
+
+The batch script loads Julia and ROOT, uses the project environment without a
+custom sysimage, and calls Julia directly; it does not use `srun`.
+Submission returns a job ID; output goes to `smoke-JOBID.log` in the repository
+root. Inspect it with `tail -n 80 smoke-JOBID.log`, replacing `JOBID` with that ID.
+If the log is not present yet, check `squeue -j JOBID` for a pending job.
 
 Expected: **45 metadata checks and 52 workflow checks pass**, with no skipped ROOT
 check. Missing/fractional-parameter error messages are intentional negative tests;
