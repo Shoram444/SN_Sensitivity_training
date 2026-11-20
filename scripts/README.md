@@ -1,168 +1,105 @@
-# Sensitivity jobs
+# ND sensitivity runs
 
-## Status
+`run2.sh` prepares and submits one SLURM job for one configuration. It uses
+[`run_nd_sensitivity_on_mathis_data_v2.jl`](../analysis/run_nd_sensitivity_on_mathis_data_v2.jl)
+as a template; it does not modify the template itself.
 
-Runner/submission and metadata-extraction implementation.
-The required `mathis_analysis_info.csv` has **not** been generated.
-Do not substitute the original CSV: its event totals have not been verified.
+## Preparation
 
-## Commands
+- The cluster needs SLURM, Julia, and the dependencies in `Project.toml` and
+  `Manifest.toml`. ROOT files are read through UnROOT.
+- The project must contain the files referenced by
+  [`mathis_data_info_final_2.csv`](../data/mathis_data_info_final_2.csv) and
+  the phase-specific lists in [`data/om_lists/`](../data/om_lists/).
+- Copy [`nd_sensitivity.example.conf`](../configs/nd_sensitivity.example.conf)
+  and edit the copy for your run. The project root is determined from the
+  location of `run2.sh`; run the script from your cluster clone.
+- Adjust the `RUN_` settings to the cluster. `RUN_MODULE` loads the Julia
+  module; leave `RUN_SYSIMAGE` empty to run without a custom sysimage. The
+  configured sysimage must be compatible with the project's package versions.
 
-Set the repository location explicitly; the working directory does not matter:
+## Submit
 
-```sh
-PROJECT_DIR=/path/to/SN_Sensitivity_training
+From the project root:
+
+```bash
+# Create the run directory and preview the sbatch command; do not submit.
+bash scripts/run2.sh configs/nd_sensitivity.example.conf --dry-run
+
+# Create a separate run directory and submit it.
+bash scripts/run2.sh configs/nd_sensitivity.example.conf
 ```
 
-1. Preview SLURM commands without reading metadata or ROOT events or writing files:
+Use the path to your edited configuration in place of the example. The script
+prints the run directory and, on submission, the SLURM job ID. Use `squeue -j
+JOB_ID` to check a running job. Inspect the error log if the job fails.
 
-   ```sh
-   julia --project="$PROJECT_DIR" "$PROJECT_DIR/scripts/submit.jl" "$PROJECT_DIR/scripts/job.example.toml" --dry-run
-   ```
+By default, each invocation creates a unique directory in `results/nd_runs/`.
+The dry run creates the directory and files too, but neither submits nor runs
+the analysis. Submitted runs contain:
 
-2. On the cluster, create the second CSV from ROOT parameters only:
+- `config.conf`: copy of the supplied configuration.
+- `settings.jl`: extracted Julia configuration.
+- `analysis.jl`: generated script, adapted from the template using `sed`.
+- `job.sh`: generated batch script; `job_id.txt`: submitted job ID.
+- `slurm-JOBID.out` and `slurm-JOBID.err`: SLURM logs.
+- `results.csv`: sensitivity and best ROI after a successful run.
 
-   ```sh
-   module load root
-   julia --project="$PROJECT_DIR" "$PROJECT_DIR/scripts/prepare_metadata.jl" "$PROJECT_DIR/scripts/job.example.toml"
-   ```
+The project environment, input ROOT files, metadata and sysimage are not
+snapshotted. Keep them unchanged if runs must remain comparable.
 
-   Add `--dry-run` to preview selected paths locally without opening ROOT files.
-   The source defaults to the original metadata CSV; use `--source CSV` for a
-   reviewed alternative. Only configured backgrounds and the selected signal
-   in the selected phase are extracted, excluding `reduces_files` rows.
+## Configuration
 
-3. Check metadata and input-file existence only:
+The `# RUN_...=` lines configure SLURM and output paths. The section between
+`# BEGIN JULIA CONFIG` and `# END JULIA CONFIG` is **executable Julia code**:
+use only trusted configuration files.
 
-   ```sh
-   julia --project="$PROJECT_DIR" "$PROJECT_DIR/scripts/run.jl" "$PROJECT_DIR/scripts/job.example.toml" --check
-   ```
+- Set `signal_name`, `phase` and `background_names` (`:all` or a list of names
+  in the metadata). Exactly one signal is used.
+- Choose `algorithm = "PSO"` or `"ECA"`. `optimization_time_limit` is in
+  seconds and defaults to **10 seconds** for testing. Set `RUN_WALLTIME`
+  longer to allow for data loading and final result calculation.
+- `var_bounds_nd` and `var_steps_nd` define the search grid. `initial_roi`
+  defines one starting ROI; its edges must be inside the bounds and on the grid.
+- Switch the topological cuts with the `use_..._cut` booleans. The OM list is
+  still loaded at startup even when `use_om_cut` is false.
+- In `nd_numeric_cuts`, `mode = :fixed` applies the configured comparison and
+  `fixed` threshold before optimization. `mode = :optimize` searches the
+  threshold over `bounds` and `step`; `fixed` becomes its initial value and
+  must lie on that grid. Add ROOT fields needed by custom expressions to
+  `extra_var_names`.
 
-4. On the cluster, submit the configured analysis:
+ND windows use `min <= abs(value) < max`, including for timing. Optimized
+numeric cuts also use absolute values and the package's `<` or `>=` boundary:
+an optimized `<=` behaves as `<`, and `>` behaves as `>=`. Fixed numeric cuts
+use their configured comparison exactly. The script warns about the changed
+boundary for optimized `>` and `<=`.
 
-   ```sh
-   julia --project="$PROJECT_DIR" "$PROJECT_DIR/scripts/submit.jl" "$PROJECT_DIR/scripts/job.example.toml"
-   ```
+Normalization remains the full exposure from `SNparams["t"]`, as in the
+original batch script. Phase 4 uses the paths recorded in the metadata CSV;
+the OM list is selected by the configured data phase.
 
-For a direct cluster run, use `run.jl CONFIG` without `--check`.
-No entry point instantiates packages, downloads data, or modifies the source CSV.
+## Tests
+
+```bash
+bash tests/test_run2.sh
+```
+
+This tests generation and mocked submission without SLURM or production ROOT
+files. It is not a cluster or full physics-analysis test.
 
 ## Listing ROOT event parameters
 
-On the cluster, load ROOT and list the `last_event_number` parameter of files
-referenced by `data/mathis_data_info_final.csv`:
+On the cluster, load ROOT and list the `last_event_number` parameter for each
+distinct path in the **original** `data/mathis_data_info_final.csv`:
 
-```sh
+```bash
 module load root
 bash scripts/list_root_events.sh > root_events.csv
 ```
 
-Python 3 is required to read the CSV. Each distinct `file_path` is checked once,
-including reduced files and signals. Relative paths resolve from the repository
-root. Errors are reported on stderr; affected rows have an empty `nb_events`
-and the command exits nonzero.
-The output is a separate report and does not change the metadata CSV.
-The parameter is copied exactly, without adding one or reading tree entries;
-its count-versus-last-ID convention still needs confirmation.
-
-## Configuration and normalization
-
-- Paths resolve relative to the repository. SLURM CPUs set Julia threads.
-  An empty module or sysimage setting disables that feature.
-- Simulation uses **2.86 years / 90192960 seconds**, phase-3 conditions, and
-  the package's isotope mass, enrichment, and Feldman-Cousins methods.
-  A copied physics dictionary keeps process times and sensitivity normalization
-  synchronized without changing package globals.
-- Validation is off by default. When enabled, simulations are divided by their
-  simulated exposure in days and measured counts by measured phase-3 live days.
-  The measured duration remains provisional.
-- Named cut sets separate fixed topology from variable windows. Set a variable's
-  `role` to `fixed` to use its bounds without optimizing it. Otherwise supply
-  `step` and `initial_roi`. Bounds and starting edges must lie on the grid.
-- All ND variable windows apply to **absolute values**, including timing, both
-  during preselection and optimization: lower inclusive, upper exclusive.
-  Topological threshold names explicitly distinguish `gt`, `ge`, `lt`, and `le`.
-
-The analysis CSV needs `phase,name,is_signal,file_path,activity_bq,amount,nb_events`
-and `nb_events_source`, with the latter equal to `ROOT:last_event_number`.
-It must have unique selected processes and files, exactly the requested signal,
-and background groups covering every selected background once. Other phases and
-other signals are not loaded. Missing inputs or unverified totals cause an error.
-See [activity_comparison.csv](activity_comparison.csv) before changing activities;
-its candidates use notebook defaults, not the optional fitted PMT factors.
-
-The extractor copies positive integral `last_event_number` values exactly:
-no `+1`, no selected-tree entry counts, no event-tree reads. The producer's
-count-versus-last-ID convention still needs confirmation against simulation
-generation records. It accepts integer ROOT parameters and exact integer-valued
-double parameters; missing, fractional, unsupported, or nonpositive values fail.
-Original counts, activities, and measured phase times are retained alongside
-source-CSV hash, extraction timestamp, and ROOT file size/mtime. Analysis preflight
-rejects changed ROOT files when these fingerprints are present.
-
-Existing output CSVs are protected. `--overwrite` explicitly regenerates the
-second CSV from the chosen source and replaces any manual edits to that output.
-The source is never overwritten, and extraction errors do not publish partial
-metadata. Regenerate metadata when changing the configured phase or signal.
-
-## Results
-
-Each submission gets a unique directory under the configured output root:
-resolved configuration, SLURM script/log, and a `results/` directory.
-The runner records metadata, hashes, software/job provenance, analysis logs,
-and `run.toml` status (`running`, `completed`, or `failed`).
-Partial outputs in a failed run are not final results.
-
-Requested CSVs contain sensitivity/FC limit/exposure, ROI edges and units,
-per-component/group backgrounds with generated/passing MC counts and
-`sqrt(sum(w^2))` errors, and cumulative cutflow. Text summaries and PDF/PNG plots
-are configurable. Plot CSVs accompany plots. Spectra apply all optimized cuts
-except the plotted variable; shaded ROI shows its final window. Signal is scaled
-to the final FC limit, not the placeholder signal activity in metadata.
-Sensitivity slices change one ROI edge while holding all others fixed; they
-are not re-optimized profiles. Validation output is a comparison, not a pass/fail
-claim, and is never marked passed merely because a file was produced.
-
-## Small-scale tests
-
-```sh
-julia --project="$PROJECT_DIR" "$PROJECT_DIR/scripts/test_workflow.jl"
-julia --project="$PROJECT_DIR" "$PROJECT_DIR/scripts/test_metadata.jl"
-```
-
-Tests use synthetic in-memory events, temporary metadata, and small plots.
-They do not load real ROOT files or submit jobs.
-When ROOT is available, metadata tests additionally create temporary parameter-only
-ROOT files to test the real C++ reader. Otherwise that integration check is explicitly
-skipped; run it on the cluster before extracting production metadata.
-
-## Bounded cluster smoke test
-
-Run this before production metadata extraction or submission. Dependencies must
-already be available in the cluster project environment. Submit from the repository
-root, like the existing batch workflow.
-This requests one CPU and 8 GB for at most 10 minutes, excluding queue wait;
-adjust partition/license names if your cluster setup differs.
-
-```sh
-cd "$PROJECT_DIR"
-sbatch scripts/smoke_test.sh
-```
-
-The batch script loads Julia and ROOT, uses the project environment without a
-custom sysimage, and calls Julia directly; it does not use `srun`.
-Submission returns a job ID; output goes to `smoke-JOBID.log` in the repository
-root. Inspect it with `tail -n 80 smoke-JOBID.log`, replacing `JOBID` with that ID.
-If the log is not present yet, check `squeue -j JOBID` for a pending job.
-
-Expected: **45 metadata checks and 52 workflow checks pass**, with no skipped ROOT
-check. Missing/fractional-parameter error messages are intentional negative tests;
-the final test summaries determine success. Tests use temporary parameter-only
-ROOT files and synthetic events, not production event trees. Outputs are temporary.
-This checks ROOT extraction, optimizer/package compatibility, tables, plots,
-validation normalization, and CLI preflight, not real detector-data correctness.
-
-If either suite fails or the allocation times out, stop and retain the first error;
-do not submit production. Once both pass, follow Commands 2-4 above:
-extract actual metadata, run preflight, then submit. The optimizer's 10-second
-limit does **not** limit full-file loading, plotting, or total job duration.
+Python 3 is required to read the CSV. Paths are relative to the project root.
+Errors go to stderr; affected rows have an empty `nb_events` and the command
+exits nonzero. The output is a separate report and does not change either
+metadata CSV. The parameter is copied exactly, without adding one or reading
+tree entries; its count-versus-last-ID convention still needs confirmation.

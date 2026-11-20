@@ -1,17 +1,32 @@
 # Sensitivity Training (SuperNEMO)
 
-This repository contains training material to compute background expectations and Bayesian sensitivity estimates in the SuperNEMO context.
+This repository contains training material and an ND sensitivity analysis workflow for SuperNEMO.
 
 ## Repository contents
 
-- `data/`: input ROOT files and `data_info.csv` index.
-- `examples/Instantiate.ipynb`: environment bootstrap notebook (activate, instantiate, precompile).
-- `examples/ex1_background.ipynb`: expected background workflow and basic outputs.
-- `examples/ex2_bayes.ipynb`: Bayesian fit and sensitivity workflow.
-- `examples/ex2_background.jl`, `examples/ex2_bayes.jl`: script versions of the notebook examples.
-- `examples/ex3_freq1D.jl`, `examples/ex3_freq1D.jl`: Frequentist 1D example
-- `examples/ex4_freqND.jl`, `examples/ex4_freqND.jl`: Frequentist ND example
+- [`analysis/`](analysis/): ND analysis script used as the batch template.
+- [`configs/`](configs/): example settings for individual sensitivity runs.
+- [`scripts/`](scripts/): SLURM submission and ROOT event-count utilities.
+- [`tests/`](tests/): tests for the batch runner.
+- [`data/`](data/): metadata, OM lists, activity comparison, and input ROOT files.
+- `results/`: generated run directories, ignored by Git.
+- [`examples/`](examples/): training notebooks and Julia examples, including `ex5_realistic_detector.jl`.
+- [`SNSymlink/`](SNSymlink/): optional Julia sysimage build script.
 
+## ND sensitivity batch runs
+
+Edit a copy of [`configs/nd_sensitivity.example.conf`](configs/nd_sensitivity.example.conf),
+then run from the repository root:
+
+```bash
+bash scripts/run2.sh configs/nd_sensitivity.example.conf --dry-run
+bash scripts/run2.sh configs/nd_sensitivity.example.conf
+```
+
+The dry run prepares files but does not submit. The second command submits one
+SLURM job; each invocation creates a separate directory under `results/nd_runs/`.
+See [`scripts/README.md`](scripts/README.md) for configuration, output files,
+requirements, and ROOT event-count utilities.
 
 # First steps:
 

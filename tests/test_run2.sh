@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT
 
 sed "s|^# RUN_OUTPUT_ROOT=.*|# RUN_OUTPUT_ROOT=$tmp/runs|" \
-    "$project_dir/examples/nd_sensitivity.example.conf" > "$tmp/example.conf"
+    "$project_dir/configs/nd_sensitivity.example.conf" > "$tmp/example.conf"
 
 cat > "$tmp/sbatch" <<'BASH'
 #!/usr/bin/env bash
@@ -32,7 +32,7 @@ chmod +x "$tmp/sbatch"
 export PATH="$tmp:$PATH"
 export SBATCH_ARGS_FILE="$tmp/sbatch-args"
 
-output=$(bash "$project_dir/examples/run2.sh" "$tmp/example.conf" --dry-run)
+output=$(bash "$project_dir/scripts/run2.sh" "$tmp/example.conf" --dry-run)
 run1=${output%%$'\n'*}
 run1=${run1#Run directory: }
 [[ -f "$run1/config.conf" && -f "$run1/settings.jl" && -f "$run1/analysis.jl" && -f "$run1/job.sh" ]]
@@ -42,7 +42,7 @@ grep -q 'use_om_cut .& (cut_om_size .| cut_om_range)' "$run1/analysis.jl"
 grep -q 'algorithm == "ECA"' "$run1/analysis.jl"
 bash -n "$run1/job.sh"
 
-output=$(bash "$project_dir/examples/run2.sh" "$tmp/example.conf")
+output=$(bash "$project_dir/scripts/run2.sh" "$tmp/example.conf")
 run2=${output%%$'\n'*}
 run2=${run2#Run directory: }
 [[ "$run1" != "$run2" ]]
@@ -51,7 +51,7 @@ grep -Fx -- "--chdir=$run2" "$SBATCH_ARGS_FILE" >/dev/null
 grep -Fx -- "--output=$run2/slurm-%j.out" "$SBATCH_ARGS_FILE" >/dev/null
 
 sed 's/^# RUN_CPUS=.*/# RUN_CPUS=0/' "$tmp/example.conf" > "$tmp/bad.conf"
-if bash "$project_dir/examples/run2.sh" "$tmp/bad.conf" --dry-run >/dev/null 2>&1; then
+if bash "$project_dir/scripts/run2.sh" "$tmp/bad.conf" --dry-run >/dev/null 2>&1; then
     echo "Invalid CPU count was accepted" >&2
     exit 1
 fi

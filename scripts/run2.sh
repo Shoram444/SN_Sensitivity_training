@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Prepare one reproducible run and submit it to SLURM.
-# Usage: bash examples/run2.sh CONFIG [--dry-run]
+# Usage: bash scripts/run2.sh CONFIG [--dry-run]
 set -euo pipefail
 
 if [[ $# -lt 1 || $# -gt 2 || (${2:-} != "" && ${2:-} != "--dry-run") ]]; then
@@ -15,7 +15,7 @@ dry_run=${2:-}
 config_dir=$(cd "$(dirname "$config")" && pwd -P)
 config="$config_dir/$(basename "$config")"
 project_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-template="$project_dir/examples/run_nd_sensitivity_on_mathis_data_v2.jl"
+template="$project_dir/analysis/run_nd_sensitivity_on_mathis_data_v2.jl"
 [[ -f "$template" ]] || { echo "Julia template not found: $template" >&2; exit 1; }
 
 # RUN_ settings are comments, not shell code. The Julia section is executable
