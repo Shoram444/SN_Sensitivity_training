@@ -37,6 +37,12 @@ cpus=$(read_setting RUN_CPUS)
 julia_module=$(read_setting RUN_MODULE)
 sysimage=$(read_setting RUN_SYSIMAGE)
 mail_user=$(read_setting RUN_MAIL_USER)
+save_auxiliary_data=false
+if grep -q '^# RUN_SAVE_AUXILIARY_DATA=' "$config"; then
+    save_auxiliary_data=$(read_setting RUN_SAVE_AUXILIARY_DATA)
+fi
+[[ "$save_auxiliary_data" == true || "$save_auxiliary_data" == false ]] ||
+    { echo "RUN_SAVE_AUXILIARY_DATA must be true or false" >&2; exit 1; }
 
 [[ -n "$output_root" && -n "$partition" && -n "$walltime" && -n "$memory" ]] ||
     { echo "Output root, partition, walltime and memory must not be empty" >&2; exit 1; }
@@ -156,6 +162,10 @@ grep -q '^CSV.write(output_dir, df)$' "$run_dir/analysis.jl" ||
     { echo "Generated Julia script is incomplete; check template changes" >&2; exit 1; }
 rm "$run_dir/select_backgrounds.jl" "$run_dir/validate_initial.jl"
 
+if [[ "$save_auxiliary_data" == true ]]; then
+    cp "$project_dir/analysis/nd_background_report.jl" "$run_dir/auxiliary.jl"
+fi
+
 # SLURM options are passed as arguments, so paths with spaces remain intact.
 cat > "$run_dir/job.sh" <<'BASH'
 #!/usr/bin/env bash
@@ -164,17 +174,20 @@ BASH
 {
     printf 'export SN_PROJECT_DIR=%q\n' "$project_dir"
     printf 'export SN_OUTPUT_PATH=%q\n' "$run_dir/results.csv"
+    printf 'export SN_SAVE_AUXILIARY_DATA=%q\n' "$save_auxiliary_data"
     printf 'export JULIA_NUM_THREADS=%q\n' "$cpus"
     printf '%s\n' 'export JULIA_CPU_TARGET=generic'
     printf 'cd %q\n' "$project_dir"
     if [[ -n "$julia_module" ]]; then
         printf 'module load %q\n' "$julia_module"
     fi
-    printf 'exec julia --project=%q -t %q --pkgimages=no' "$project_dir" "$cpus"
+    julia_cmd=(julia "--project=$project_dir" -t "$cpus" --pkgimages=no)
     if [[ -n "$sysimage" ]]; then
-        printf ' -J %q' "$sysimage"
+        julia_cmd+=(-J "$sysimage")
     fi
-    printf ' %q\n' "$run_dir/analysis.jl"
+    printf 'exec '
+    printf '%q ' "${julia_cmd[@]}"
+    printf '%q\n' "$run_dir/analysis.jl"
 } >> "$run_dir/job.sh"
 
 sbatch_args=(

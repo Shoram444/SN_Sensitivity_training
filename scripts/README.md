@@ -48,6 +48,36 @@ the analysis. Submitted runs contain:
 The project environment, input ROOT files, metadata and sysimage are not
 snapshotted. Keep them unchanged if runs must remain comparable.
 
+### Optional background report
+
+Set `# RUN_SAVE_AUXILIARY_DATA=true` in the configuration (`false` by default).
+The runner copies `auxiliary.jl` into the run directory and the analysis
+includes it after successful optimization, in the same Julia process.
+The report uses the best ROI and the preselected background columns already
+in memory. It does not reopen ROOT files or repeat the fixed cuts. With this
+option enabled, the analysis retains background events over 0–4 MeV for the
+report, so it can use more memory; the optimization keeps its original
+energy-sum preselection.
+
+- `background_spectrum.png`: logarithmic step plot of expected counts for the
+  full exposure, in 50 keV bins from 0 to 4 MeV. The best energy-sum ROI is
+  shaded, not applied as a cut; the configured optimization energy-sum
+  prefilter is also lifted. All other cuts remain active. PMTs are grouped
+  as in the ex5 plot. Curves drop to the bottom of the log axis at zero-count
+  bins. Vertical bars show ±1σ MC statistical uncertainty, clipped at the
+  bottom of the axis where necessary. A vector copy is saved as
+  `background_spectrum.pdf`. The subtitle shows the signal used to optimize
+  the ROI and the exposure in kg·yr (process live time × foil mass).
+- `background_components.csv`: passing MC events and expected counts per
+  background (plus a total) for the full best ROI and for
+  `0 <= E_sum < 4 MeV` with only the energy-sum window replaced. The ROI total
+  is checked against `best_bkg` in `results.csv`.
+
+The plot and CSV use the weighted Poisson estimate `sqrt(sum(w^2))` for MC
+statistical uncertainty, where `w` is each passing event's normalization
+weight. Independent contributions add in quadrature, including PMT groups
+and totals. Activity and other systematic uncertainties are not included.
+
 ## Configuration
 
 The `# RUN_...=` lines configure SLURM and output paths. The section between
@@ -83,10 +113,11 @@ the OM list is selected by the configured data phase.
 
 ```bash
 bash tests/test_run2.sh
+julia --project=. tests/test_nd_background_report.jl
 ```
 
-This tests generation and mocked submission without SLURM or production ROOT
-files. It is not a cluster or full physics-analysis test.
+These tests cover generation, mocked submission, and the background report on
+synthetic events without SLURM or production ROOT files.
 
 ## Listing ROOT event parameters
 

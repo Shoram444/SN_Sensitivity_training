@@ -11,11 +11,11 @@ cleanup() {
     local dir
     for dir in "$run1" "$run2"; do
         if [[ -n "$dir" && "$dir" == "$tmp/runs/"* ]]; then
-            rm -f "$dir/config.conf" "$dir/settings.jl" "$dir/analysis.jl" "$dir/job.sh" "$dir/job_id.txt"
+            rm -f "$dir/config.conf" "$dir/settings.jl" "$dir/analysis.jl" "$dir/auxiliary.jl" "$dir/job.sh" "$dir/job_id.txt"
             rmdir "$dir"
         fi
     done
-    rm -f "$tmp/example.conf" "$tmp/sbatch" "$tmp/sbatch-args" "$tmp/bad.conf"
+    rm -f "$tmp/example.conf" "$tmp/aux.conf" "$tmp/sbatch" "$tmp/sbatch-args" "$tmp/bad.conf"
     rmdir "$tmp/runs" "$tmp"
 }
 trap cleanup EXIT
@@ -37,18 +37,27 @@ run1=${output%%$'\n'*}
 run1=${run1#Run directory: }
 [[ -f "$run1/config.conf" && -f "$run1/settings.jl" && -f "$run1/analysis.jl" && -f "$run1/job.sh" ]]
 [[ ! -e "$SBATCH_ARGS_FILE" ]]
+[[ ! -e "$run1/auxiliary.jl" ]]
 grep -q 'include(joinpath(@__DIR__, "settings.jl"))' "$run1/analysis.jl"
 grep -q 'use_om_cut .& (cut_om_size .| cut_om_range)' "$run1/analysis.jl"
 grep -q 'algorithm == "ECA"' "$run1/analysis.jl"
 bash -n "$run1/job.sh"
 
-output=$(bash "$project_dir/scripts/run2.sh" "$tmp/example.conf")
+sed 's/^# RUN_SAVE_AUXILIARY_DATA=false$/# RUN_SAVE_AUXILIARY_DATA=true/' \
+    "$tmp/example.conf" > "$tmp/aux.conf"
+output=$(bash "$project_dir/scripts/run2.sh" "$tmp/aux.conf")
 run2=${output%%$'\n'*}
 run2=${run2#Run directory: }
 [[ "$run1" != "$run2" ]]
 [[ $(<"$run2/job_id.txt") == 12345 ]]
 grep -Fx -- "--chdir=$run2" "$SBATCH_ARGS_FILE" >/dev/null
 grep -Fx -- "--output=$run2/slurm-%j.out" "$SBATCH_ARGS_FILE" >/dev/null
+[[ -f "$run2/auxiliary.jl" ]]
+grep -Fxq 'export SN_SAVE_AUXILIARY_DATA=true' "$run2/job.sh"
+grep -Fq 'include(joinpath(@__DIR__, "auxiliary.jl"))' "$run2/analysis.jl"
+bash -n "$run2/job.sh"
+[[ $(grep -c 'julia --project=' "$run2/job.sh") == 1 ]]
+[[ $(tail -n 1 "$run2/job.sh") == "exec julia "*analysis.jl ]]
 
 sed 's/^# RUN_CPUS=.*/# RUN_CPUS=0/' "$tmp/example.conf" > "$tmp/bad.conf"
 if bash "$project_dir/scripts/run2.sh" "$tmp/bad.conf" --dry-run >/dev/null 2>&1; then

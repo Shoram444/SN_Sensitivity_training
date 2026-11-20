@@ -3,6 +3,7 @@
 ####
 
 global PROJECT_DIR = get(ENV, "SN_PROJECT_DIR", "/sps/nemo/scratch/mpetro/Sensitivity_training/")
+const save_auxiliary_data = get(ENV, "SN_SAVE_AUXILIARY_DATA", "false") == "true"
 
 # Settings can also be exported from run.sh before starting Julia.
 global signal_name = get(ENV, "SN_SIGNAL_NAME", "bb0nuM1")
@@ -201,9 +202,16 @@ function filter_nd_bounds(table, var_names, bounds)
     return table[keep]
 end
 
+const background_spectrum_edges = 0.0:0.05:4.0
+energy_bounds = var_bounds_nd.energy_elec_sum
+report_bounds = merge(var_bounds_nd, (
+    energy_elec_sum = (min(first(energy_bounds), first(background_spectrum_edges)),
+                       max(last(energy_bounds), last(background_spectrum_edges))),
+))
 filtered_data_tables_nd = [
-    filter_nd_bounds(table, var_names_nd, var_bounds_nd)
-    for table in selected_tables_nd
+    filter_nd_bounds(table, var_names_nd,
+                     save_auxiliary_data && !is_signal ? report_bounds : var_bounds_nd)
+    for (table, is_signal) in zip(selected_tables_nd, selected_files.is_signal)
 ]
 
 @info "Data loaded and filtered, applying Mathis's extra cuts..."
@@ -261,6 +269,31 @@ filtered_data_tables_nd = [
     for table in filtered_data_tables_nd
 ]
 
+# Cache only the ROI columns, including derived cuts, before narrowing E_sum
+# back to the optimization range. Both the report and PSO reuse these values.
+function cache_background_table(table, names, cuts)
+    isempty(table) && return table
+    columns = NamedTuple(Symbol(name) => collect(getproperty(table, Symbol(name))) for name in names)
+    derived = NamedTuple(cut_column(cut) => map(cut.value, table) for cut in cuts)
+    return UnROOT.LazyTree(merge(columns, derived))
+end
+
+if save_auxiliary_data
+    background_rows = findall(!, selected_files.is_signal)
+    report_files = selected_files[background_rows, :]
+    report_tables = [
+        cache_background_table(filtered_data_tables_nd[i], var_names_nd, optimized_cuts)
+        for i in background_rows
+    ]
+    report_by_row = Dict(zip(background_rows, report_tables))
+    filtered_data_tables_nd = [
+        haskey(report_by_row, i) ?
+            filter_nd_bounds(report_by_row[i], ("energy_elec_sum",), var_bounds_nd) :
+            table
+        for (i, table) in enumerate(filtered_data_tables_nd)
+    ]
+end
+
 # Empty backgrounds contribute no events. with_variable requires nonempty data.
 nd_nonempty = findall(i -> !isempty(filtered_data_tables_nd[i]), eachindex(filtered_data_tables_nd))
 for i in eachindex(filtered_data_tables_nd)
@@ -277,6 +310,8 @@ flush(stdout)
 
 # STEP 2: Create DataProcessND objects.
 # Keep the original batch script's normalization to the full exposure.
+cached_names = [var_names_nd; String.(cut_column.(optimized_cuts))]
+cached_bounds = merge(var_bounds_nd, NamedTuple(cut_column(cut) => (0.0, Inf) for cut in optimized_cuts))
 processes_nd = [
     SNSensitivityEstimate.DataProcessND(
         filtered_data_tables_nd[i],
@@ -285,9 +320,9 @@ processes_nd = [
         selected_files.activity_bq[i],
         SNparams["t"],
         selected_files.nb_events[i],
-        var_bounds_nd,
+        save_auxiliary_data && !selected_files.is_signal[i] ? cached_bounds : var_bounds_nd,
         selected_files.amount[i],
-        var_names_nd,
+        save_auxiliary_data && !selected_files.is_signal[i] ? cached_names : var_names_nd,
     ) for i in eachindex(filtered_data_tables_nd)
 ]
 
@@ -297,7 +332,8 @@ processes_nd = let processes = processes_nd
             @warn "Optimized cut uses the package's >= or < interval boundary" name=cut.name
         end
         processes = [
-            with_variable(process, cut_column(cut), cut.value, (0.0, Inf))
+            save_auxiliary_data && !process.signal ? process :
+                with_variable(process, cut_column(cut), cut.value, (0.0, Inf))
             for process in processes
         ]
     end
@@ -429,3 +465,9 @@ df = DataFrame(
     best_eff = [best_sens.signalEff],
 )
 CSV.write(output_dir, df)
+
+if save_auxiliary_data
+    include(joinpath(@__DIR__, "auxiliary.jl"))
+    save_background_report(output_dir, phase, signal_process, report_files, report_tables, best,
+                           energy_bounds, background_spectrum_edges, best_sens.bkgCounts)
+end
