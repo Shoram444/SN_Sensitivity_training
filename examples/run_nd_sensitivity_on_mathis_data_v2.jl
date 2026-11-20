@@ -1,0 +1,431 @@
+####
+#### Example script for running in batch mode - calculates sensitivity for one phase and signal
+####
+
+global PROJECT_DIR = get(ENV, "SN_PROJECT_DIR", "/sps/nemo/scratch/mpetro/Sensitivity_training/")
+
+# Settings can also be exported from run.sh before starting Julia.
+global signal_name = get(ENV, "SN_SIGNAL_NAME", "bb0nuM1")
+global phase = get(ENV, "SN_PHASE", "phase_3")
+global optimization_time_limit = parse(Float64, get(ENV, "SN_OPTIMIZATION_TIME_LIMIT", "10.0"))
+global output_dir = get(
+    ENV,
+    "SN_OUTPUT_PATH",
+    joinpath(PROJECT_DIR, "data", "out", "$(signal_name)_ex5_phase_$(phase)_sensitivity_v2.csv"),
+)
+global α = 1.64485362695147
+
+@info "Running sensitivity optimization for phase: $phase, with signal: $signal_name, output will be saved to: $output_dir"
+flush(stdout)
+
+using SNSensitivityEstimate, UnROOT, FHist, CSV, DataFramesMeta
+using Distributions, Metaheuristics
+
+@info "Packages loaded, loading data..."
+flush(stdout)
+
+# STEP 1: Load the data
+data_info = CSV.read(joinpath(PROJECT_DIR, "data", "mathis_data_info_final_2.csv"), DataFrame)
+
+# The list contains bad OMs; the first line is a header.
+om_list_files = Dict(
+    "phase_0" => "list_om_phase_0.txt",
+    "phase_1" => "list_om_phase_1.txt",
+    "phase_2" => "list_om_phase_2a.txt",
+    "phase_3" => "list_om_phase_2b.txt",
+    "phase_4" => "list_om_phase_3.txt",
+)
+
+function read_bad_oms(path)
+    lines = readlines(path)
+    isempty(lines) && error("OM list is empty: $path")
+    bad = Set{Int}()
+    for line in lines[2:end], token in split(line)
+        om = tryparse(Int, token)
+        om === nothing && continue
+        0 <= om <= 711 || error("Invalid OM identifier $om in $path")
+        push!(bad, om)
+    end
+    return bad
+end
+
+haskey(om_list_files, phase) || error("No OM list configured for $phase")
+om_list_path = joinpath(PROJECT_DIR, "data", "om_lists", om_list_files[phase])
+bad_oms = read_bad_oms(om_list_path)
+@info "Loaded $(length(bad_oms)) bad OMs for $phase from $om_list_path"
+
+# Only load the selected signal and backgrounds for this phase.
+selected_files = @chain data_info begin
+    @subset :phase .== phase
+    @subset .!occursin.("reduces", :file_path)
+    @subset .! :is_signal .| (:name .== signal_name)
+end
+signal_rows = findall(selected_files.is_signal .& (selected_files.name .== signal_name))
+length(signal_rows) == 1 || error("Expected exactly one $signal_name signal in $phase")
+any(.!selected_files.is_signal) || error("No backgrounds found for $phase")
+
+data_files = [UnROOT.ROOTFile(joinpath(PROJECT_DIR, file_path)) for file_path in selected_files.file_path]
+tree_name = "Event"
+
+# We don't need all the variables, only those used by the analysis and cuts.
+var_names = [
+    "energy_elec_sum",
+    "angle_3D_between_ep_em",
+    "delta_y_elec",
+    "delta_z_elec",
+    "diff_time_elec",
+    "energy_elec_1",
+    "energy_elec_2",
+    "hit_the_same_calo_hit",
+    "closest_gamma",
+    "closest_elec",
+    "closest_track",
+    "closest_time_track",
+    "has_kinks",
+    "num_om_elec_f",
+    "vertex_3D_start_y",
+    "vertex_3D_start_z",
+]
+
+# Sensitivity ND
+var_names_nd = [
+    "energy_elec_sum",
+    "angle_3D_between_ep_em",
+    "delta_y_elec",
+    "delta_z_elec",
+    "diff_time_elec",
+    "energy_elec_1",
+    "energy_elec_2",
+]
+
+# The ND package applies these bounds to abs(value), including diff_time_elec.
+var_bounds_nd = (
+    energy_elec_sum = (2.40, 3.50),
+    angle_3D_between_ep_em = (0, 180),
+    delta_y_elec = (0, 200),
+    delta_z_elec = (0, 200),
+    diff_time_elec = (0, 5),
+    energy_elec_1 = (0, 3.50),
+    energy_elec_2 = (0, 3.50),
+)
+
+# Default search resolution (adjust if needed).
+var_steps_nd = (
+    energy_elec_sum = 0.10, # 100 keV
+    angle_3D_between_ep_em = 5.0, # degrees
+    delta_y_elec = 5.0, # mm
+    delta_z_elec = 5.0, # mm
+    diff_time_elec = 0.25, # ns
+    energy_elec_1 = 0.05, # MeV
+    energy_elec_2 = 0.05, # MeV
+)
+
+# Fixed cuts use comparison and fixed. To optimize a cut, change mode to
+# :optimize and set bounds and step for its threshold.
+# The ND package applies optimized cuts to abs(value): < max or >= min.
+# Include any new variables used by value in var_names above.
+nd_numeric_cuts = [
+    (
+        name = :vertex_distance,
+        value = event -> sqrt(event.delta_y_elec^2 + event.delta_z_elec^2),
+        comparison = (<),
+        mode = :optimize,
+        fixed = 300.0,
+        bounds = (50.0, 300.0),
+        step = 10.0,
+    ),
+    (
+        name = :closest_gamma,
+        value = event -> abs(event.closest_gamma),
+        comparison = (>),
+        mode = :fixed,
+        fixed = 50.0,
+        bounds = (50.0, 150.0),
+        step = 10.0,
+    ),
+    (
+        name = :closest_elec,
+        value = event -> abs(event.closest_elec),
+        comparison = (>),
+        mode = :fixed,
+        fixed = 25.0,
+        bounds = (25.0, 125.0),
+        step = 10.0,
+    ),
+    (
+        name = :closest_track,
+        value = event -> abs(event.closest_track),
+        comparison = (>=),
+        mode = :fixed,
+        fixed = 200.0,
+        bounds = (200.0, 400.0),
+        step = 10.0,
+    ),
+    (
+        name = :closest_time_track,
+        value = event -> abs(event.closest_time_track),
+        comparison = (>=),
+        mode = :fixed,
+        fixed = 10.0,
+        bounds = (10.0, 50.0),
+        step = 5.0,
+    ),
+]
+
+for cut in nd_numeric_cuts
+    cut.mode in (:fixed, :optimize) || error("Unknown mode for $(cut.name)")
+    cut.comparison in ((<), (<=), (>), (>=)) || error("Unknown comparison for $(cut.name)")
+    if cut.mode == :optimize
+        lo, hi = cut.bounds
+        cut.step > 0 && 0 <= lo <= hi || error("Invalid threshold grid for $(cut.name)")
+        isapprox((hi - lo) / cut.step, round((hi - lo) / cut.step)) ||
+            error("Threshold bounds must align with the step for $(cut.name)")
+    end
+end
+length(unique(cut.name for cut in nd_numeric_cuts)) == length(nd_numeric_cuts) ||
+    error("ND numeric cut names must be unique")
+optimized_cuts = [cut for cut in nd_numeric_cuts if cut.mode == :optimize]
+cut_column(cut) = Symbol("__nd_cut_", cut.name)
+cut_steps(cut) = round(Int, (cut.bounds[2] - cut.bounds[1]) / cut.step)
+
+selected_tables_nd = [UnROOT.LazyTree(data_file, tree_name, var_names) for data_file in data_files]
+
+# Match the package's ND ROI convention: min <= abs(value) < max.
+function filter_nd_bounds(table, var_names, bounds)
+    keep = trues(length(table))
+    for name in var_names
+        lo, hi = bounds[Symbol(name)]
+        values = getproperty(table, Symbol(name))
+        keep .&= (lo .<= abs.(values)) .& (abs.(values) .< hi)
+    end
+    return table[keep]
+end
+
+filtered_data_tables_nd = [
+    filter_nd_bounds(table, var_names_nd, var_bounds_nd)
+    for table in selected_tables_nd
+]
+
+@info "Data loaded and filtered, applying Mathis's extra cuts..."
+flush(stdout)
+
+# Apply fixed topological cuts before calculating numeric cut variables.
+for i in eachindex(filtered_data_tables_nd)
+    table = filtered_data_tables_nd[i]
+    cut_same_calo = table.hit_the_same_calo_hit .== 1
+    cut_kinks = table.has_kinks .== 1
+
+    n_evt = length(table)
+    cut_om_size = [length(table.num_om_elec_f[j]) != 2 for j in 1:n_evt]
+    cut_om_range = falses(n_evt)
+    cut_vertex_region = falses(n_evt)
+
+    for j in 1:n_evt
+        if !cut_om_size[j]
+            om0, om1 = table.num_om_elec_f[j]
+            cut_om_range[j] = !(0 <= om0 < 520 && 0 <= om1 < 520) ||
+                              om0 in bad_oms || om1 in bad_oms
+        end
+
+        if !cut_om_size[j] && !cut_om_range[j] && length(table.vertex_3D_start_y[j]) >= 2 && length(table.vertex_3D_start_z[j]) >= 2
+            y_mid = 0.5 * (table.vertex_3D_start_y[j][1] + table.vertex_3D_start_y[j][2])
+            z_mid = 0.5 * (table.vertex_3D_start_z[j][1] + table.vertex_3D_start_z[j][2])
+
+            cut_vertex_region[j] = (
+                ((y_mid - 1180) / 60)^2 + ((z_mid + 850) / 140)^2 <= 1 ||
+                ((y_mid - 1144) / 25)^2 + ((z_mid - 196) / 40)^2 <= 1 ||
+                ((y_mid - 1114) / 25)^2 + ((z_mid + 257) / 40)^2 <= 1 ||
+                abs(y_mid) > 2360 || abs(z_mid) > 1340
+            )
+        end
+    end
+
+    keep = .!(cut_same_calo .| cut_kinks .| cut_om_size .| cut_om_range .| cut_vertex_region)
+    filtered_data_tables_nd[i] = table[keep]
+end
+
+# Optimized numeric cuts are left unfiltered until the ROI is evaluated.
+function apply_fixed_numeric_cuts(table, cuts)
+    keep = trues(length(table))
+    for cut in cuts
+        if cut.mode == :fixed
+            values = map(cut.value, table)
+            keep .&= cut.comparison.(values, cut.fixed)
+        end
+    end
+    return table[keep]
+end
+
+filtered_data_tables_nd = [
+    apply_fixed_numeric_cuts(table, nd_numeric_cuts)
+    for table in filtered_data_tables_nd
+]
+
+# Empty backgrounds contribute no events. with_variable requires nonempty data.
+nd_nonempty = findall(i -> !isempty(filtered_data_tables_nd[i]), eachindex(filtered_data_tables_nd))
+for i in eachindex(filtered_data_tables_nd)
+    if isempty(filtered_data_tables_nd[i])
+        selected_files.is_signal[i] && error("No signal events remain after ND cuts")
+        @warn "Skipping empty ND background" name=selected_files.name[i]
+    end
+end
+selected_files = selected_files[nd_nonempty, :]
+filtered_data_tables_nd = filtered_data_tables_nd[nd_nonempty]
+
+@info "Mathis's extra cuts applied, creating ND processes..."
+flush(stdout)
+
+# STEP 2: Create DataProcessND objects.
+# Keep the original batch script's normalization to the full exposure.
+processes_nd = [
+    SNSensitivityEstimate.DataProcessND(
+        filtered_data_tables_nd[i],
+        String(selected_files.name[i]),
+        selected_files.is_signal[i],
+        selected_files.activity_bq[i],
+        SNparams["t"],
+        selected_files.nb_events[i],
+        var_bounds_nd,
+        selected_files.amount[i],
+        var_names_nd,
+    ) for i in eachindex(filtered_data_tables_nd)
+]
+
+processes_nd = let processes = processes_nd
+    for cut in optimized_cuts
+        if cut.comparison === (>) || cut.comparison === (<=)
+            @warn "Optimized cut uses the package's >= or < interval boundary" name=cut.name
+        end
+        processes = [
+            with_variable(process, cut_column(cut), cut.value, (0.0, Inf))
+            for process in processes
+        ]
+    end
+    processes
+end
+
+signal_matches = get_process(signal_name, processes_nd)
+length(signal_matches) == 1 && only(signal_matches).signal ||
+    error("Expected exactly one $signal_name signal in $phase")
+count(p -> p.signal, processes_nd) == 1 || error("ND optimization requires exactly one signal")
+any(p -> !p.signal, processes_nd) || error("No background events remain after ND cuts")
+
+signal_process = only(signal_matches)
+const PROCESSES_ND = processes_nd
+
+# STEP 3: Define the optimization problem.
+@info "Defining the optimization problem..."
+flush(stdout)
+
+# Base ROI edges have two indices each; optimized cuts add one threshold each.
+for name in var_names_nd
+    lo, hi = var_bounds_nd[Symbol(name)]
+    step = var_steps_nd[Symbol(name)]
+    step > 0 && lo < hi || error("Invalid ROI grid for $name")
+    isapprox((hi - lo) / step, round((hi - lo) / step)) ||
+        error("ROI bounds must align with the step for $name")
+end
+grid_mins = [Float64(var_bounds_nd[Symbol(name)][1]) for name in var_names_nd]
+grid_steps = [Float64(var_steps_nd[Symbol(name)]) for name in var_names_nd]
+grid_sizes = [
+    round(Int, (var_bounds_nd[Symbol(name)][2] - var_bounds_nd[Symbol(name)][1]) /
+               var_steps_nd[Symbol(name)])
+    for name in var_names_nd
+]
+grid = GridSpec(Symbol.(var_names_nd), grid_mins, grid_steps, grid_sizes)
+
+searchRange = make_stepRange(grid)
+for cut in optimized_cuts
+    push!(searchRange, (0, cut_steps(cut)))
+end
+
+function nd_thresholds(indices)
+    offset = 2 * length(var_names_nd)
+    return NamedTuple(
+        cut.name => min(cut.bounds[2], cut.bounds[1] + round(Int, indices[offset + i]) * cut.step)
+        for (i, cut) in enumerate(optimized_cuts)
+    )
+end
+
+function nd_roi(indices)
+    edges = decode_grid_roi(indices[1:2 * length(var_names_nd)], grid)
+    roi = NamedTuple(
+        Symbol(name) => (edges[2i-1], edges[2i])
+        for (i, name) in enumerate(var_names_nd)
+    )
+    thresholds = nd_thresholds(indices)
+    cut_intervals = NamedTuple(
+        cut_column(cut) => (
+            cut.comparison in ((<), (<=)) ?
+            (0.0, thresholds[cut.name]) :
+            (thresholds[cut.name], Inf)
+        )
+        for cut in optimized_cuts
+    )
+    return merge(roi, cut_intervals)
+end
+
+# The formula approximation is faster; the final result uses the table method.
+function prob(proposed_indices)
+    roi = nd_roi(proposed_indices)
+    edges = Float64[edge for interval in values(roi) for edge in interval]
+    return -get_s_to_b(SNparams, α, PROCESSES_ND, edges; approximate="formula")
+end
+
+lower_bound = [x[1] for x in searchRange] .|> float
+upper_bound = [x[2] for x in searchRange] .|> float
+options = Options(;
+    time_limit = float(optimization_time_limit),
+    verbose = true,
+)
+bounds = boxconstraints(lb = lower_bound, ub = upper_bound)
+algo = PSO(; options)
+
+# Initial ROI from the original batch script, with a symmetric time cut.
+initial_roi = (
+    energy_elec_sum = (2.400, 3.100),
+    angle_3D_between_ep_em = (0, 180),
+    delta_y_elec = (0, 100),
+    delta_z_elec = (0, 140),
+    diff_time_elec = (0, 2.5),
+    energy_elec_1 = (0.300, 2.900),
+    energy_elec_2 = (0.300, 2.900),
+)
+x0 = float.(encode_grid_roi(initial_roi, grid))
+for cut in optimized_cuts
+    initial = clamp(round(Int, (cut.fixed - cut.bounds[1]) / cut.step), 0, cut_steps(cut))
+    push!(x0, initial)
+end
+set_user_solutions!(algo, x0, prob)
+
+@info "Starting optimization with PSO algorithm..."
+flush(stdout)
+
+result = optimize(prob, bounds, algo)
+
+@info "Optimization finished, processing results..."
+flush(stdout)
+
+@show minimum(result)
+@show res = minimizer(result)
+
+best = nd_roi(res)
+best_thresholds = nd_thresholds(res)
+best_sens = get_sensitivityND(SNparams, α, PROCESSES_ND, best; approximate="table")
+best_sens.signalEff > 0 || error("ND optimization found no signal events")
+
+println("\n===== BEST RESULT =====")
+println("Signal process = ", signal_name)
+println("Optimized numeric cuts: ", best_thresholds)
+print(best_sens)
+
+# Save results to csv.
+mkpath(dirname(output_dir))
+df = DataFrame(
+    phase = phase,
+    best_sensitivity = [best_sens.tHalf],
+    best_ROI = [best_sens.roi],
+    best_bkg = [best_sens.bkgCounts],
+    best_eff = [best_sens.signalEff],
+)
+CSV.write(output_dir, df)

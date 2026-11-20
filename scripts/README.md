@@ -47,6 +47,24 @@ PROJECT_DIR=/path/to/SN_Sensitivity_training
 For a direct cluster run, use `run.jl CONFIG` without `--check`.
 No entry point instantiates packages, downloads data, or modifies the source CSV.
 
+## Listing ROOT event parameters
+
+On the cluster, load ROOT and list the `last_event_number` parameter of files
+referenced by `data/mathis_data_info_final.csv`:
+
+```sh
+module load root
+bash scripts/list_root_events.sh > root_events.csv
+```
+
+Python 3 is required to read the CSV. Each distinct `file_path` is checked once,
+including reduced files and signals. Relative paths resolve from the repository
+root. Errors are reported on stderr; affected rows have an empty `nb_events`
+and the command exits nonzero.
+The output is a separate report and does not change the metadata CSV.
+The parameter is copied exactly, without adding one or reading tree entries;
+its count-versus-last-ID convention still needs confirmation.
+
 ## Configuration and normalization
 
 - Paths resolve relative to the repository. SLURM CPUs set Julia threads.

@@ -1,5 +1,7 @@
 # Standardized sensitivity jobs
 
+Next session: read [HANDOFF.md](HANDOFF.md); inspect the cluster batch smoke-test log first.
+
 Status: Steps 1-5 complete locally; cluster smoke test/extraction pending.
 Verified: 52 workflow + 42 metadata checks pass; no real ROOT files loaded.
 ROOT/C++ integration is explicitly skipped locally; run it on the cluster.
