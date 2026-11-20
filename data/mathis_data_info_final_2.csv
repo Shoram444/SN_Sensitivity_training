@@ -72,12 +72,12 @@ phase_0,radon,false,data/mathis_files/radon/phase_0/radon_phase_0.root,1.279080,
 phase_1,radon,false,data/mathis_files/radon/phase_1/radon_phase_1.root,1.468035,1.0,9.019296e7,2.2166779e6,145000000
 phase_2,radon,false,data/mathis_files/radon/phase_2/radon_phase_2.root,1.1090205,1.0,9.019296e7,1.2274785e6,144000000
 phase_3,radon,false,data/mathis_files/radon/phase_3/radon_phase_3.root,0.95465880,1.0,9.019296e7,6.615636e6,144000000
-phase_4,radon,false,data/mathis_files/radon/phase_3/radon_phase_3.root,0.14149575405,1.0,9.019296e7,1.3409078e7,144000000
+phase_4,radon,false,data/mathis_files/radon/phase_3/radon_phase_3.root,0.09016468999999999,1.0,9.019296e7,1.3409078e7,144000000
 phase_0,radon_surface,false,data/mathis_files/radon_surface/phase_0/radon_surface_phase_0.root,0.067320,1.0,9.019296e7,3.2755212e6,147000000
 phase_1,radon_surface,false,data/mathis_files/radon_surface/phase_1/radon_surface_phase_1.root,0.077265,1.0,9.019296e7,2.2166779e6,149000000
 phase_2,radon_surface,false,data/mathis_files/radon_surface/phase_2/radon_surface_phase_2.root,0.0583695,1.0,9.019296e7,1.2274785e6,146000000
 phase_3,radon_surface,false,data/mathis_files/radon_surface/phase_3/radon_surface_phase_3.root,0.05024520,1.0,9.019296e7,6.615636e6,146000000
-phase_4,radon_surface,false,data/mathis_files/radon_surface/phase_3/radon_surface_phase_3.root,0.00744714495,1.0,9.019296e7,1.3409078e7,146000000
+phase_4,radon_surface,false,data/mathis_files/radon_surface/phase_3/radon_surface_phase_3.root,0.0047455100000000005,1.0,9.019296e7,1.3409078e7,146000000
 phase_0,bb,false,data/mathis_files/reduces_files/bb/phase_0/bb_phase_0.root,0.011339966047433741,1.0,9.019296e7,3.2755212e6,30000000
 phase_1,bb,false,data/mathis_files/reduces_files/bb/phase_1/bb_phase_1.root,0.011339966047433741,1.0,9.019296e7,2.2166779e6,30000000
 phase_2,bb,false,data/mathis_files/reduces_files/bb/phase_2/bb_phase_2.root,0.011339966047433741,1.0,9.019296e7,1.2274785e6,30000000
