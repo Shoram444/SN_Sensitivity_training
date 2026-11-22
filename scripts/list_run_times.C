@@ -53,11 +53,14 @@ std::string tree_run_number(TFile& file) {
     return std::to_string(static_cast<Long64_t>(leaf->GetValue()));
 }
 
-std::string file_run_number(const std::string& path) {
-    static const std::regex pattern("run[_-]?([0-9]+)", std::regex::icase);
-    const std::string name = path.substr(path.find_last_of('/') + 1);
+// Run number from the parent directory, .../run_XXX/extracted_data.root.
+std::string directory_run_number(const std::string& path) {
+    static const std::regex pattern("run_0*([0-9]+)");
+    const std::string parent = path.substr(0, path.find_last_of('/'));
+    const std::string name = parent.substr(parent.find_last_of('/') + 1);
     std::smatch match;
-    return std::regex_search(name, match, pattern) ? match[1].str() : "";
+    if (!std::regex_match(name, match, pattern)) throw std::runtime_error("parent directory is not run_XXX");
+    return match[1].str();
 }
 }
 
@@ -80,15 +83,12 @@ void list_run_times() {
             try {
                 std::unique_ptr<TFile> file(TFile::Open(path.c_str(), "READ"));
                 if (!file || file->IsZombie()) throw std::runtime_error("cannot open ROOT file");
+                const std::string run = directory_run_number(path);
                 const double time = run_time(file->Get("run_time"));
-                std::string run = tree_run_number(*file);
-                const std::string from_name = file_run_number(path);
-                if (run.empty()) {
-                    run = from_name;
-                } else if (!from_name.empty() && from_name != run) {
-                    std::cerr << path << ": run_number " << run << " differs from file name\n";
+                const std::string from_tree = tree_run_number(*file);
+                if (!from_tree.empty() && from_tree != run) {
+                    std::cerr << path << ": Event run_number " << from_tree << " differs from directory\n";
                 }
-                if (run.empty()) std::cerr << path << ": run number unknown\n";
                 output << run << ',' << time;
             } catch (const std::exception& error) {
                 std::cerr << path << ": " << error.what() << '\n';

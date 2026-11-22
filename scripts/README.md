@@ -139,22 +139,24 @@ tree entries; its count-versus-last-ID convention still needs confirmation.
 
 ### 1. Run times (cluster)
 
-Each per-run ROOT file stores its duration in the `run_time` parameter. On
-the cluster, list it for every file in the default directory
+Each run has its own directory `run_XXX` containing `extracted_data.root`,
+which stores the run duration in the `run_time` parameter. On the cluster, list
+it for every `run_*/extracted_data.root` in the default directory
 `/sps/nemo/scratch/granjon/double_beta/cimrman_curve/ptd_pol2/root_with_max_threshold_working`:
 
 ```bash
 module load root
 bash scripts/list_run_times.sh > data/real_data/run_times.csv
-# or another directory and file-name pattern:
-bash scripts/list_run_times.sh DIRECTORY 'run_*.root' > data/real_data/run_times.csv
+# or another directory with the same layout:
+bash scripts/list_run_times.sh DIRECTORY > data/real_data/run_times.csv
 ```
 
-The CSV has `file_path,run_number,run_time`. The run number is taken from the
-first event of the `Event` tree, or from `run_NNNN` in the file name when the
-tree is empty. Errors go to stderr and the command exits nonzero; affected
-rows have empty fields. Do not include merged files: the comparison rejects
-run numbers listed more than once.
+No other files are read. The CSV has `file_path,run_number,run_time`; the run
+number comes from the directory name (leading zeros removed). A warning is
+printed when the first event's `run_number` differs, and for `run_*`
+directories without `extracted_data.root`. Errors go to stderr and the
+command exits nonzero; affected rows have empty fields. The comparison
+rejects run numbers listed more than once.
 
 ### 2. Comparison
 
