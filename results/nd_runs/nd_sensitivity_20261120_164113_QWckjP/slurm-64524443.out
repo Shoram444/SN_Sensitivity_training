@@ -1,0 +1,27 @@
+**********************************************************************
+*                         SLURM Batch System                         *
+*              IN2P3 Computing Centre, Villeurbanne FR               *
+**********************************************************************
+* Date:                 Fri Nov 20 04:41:14 PM CET 2026
+* Job name:             nd_sensitivity
+* Job id:               64524443
+* User:                 mpetro
+* Account:              nemo
+* Submit host:          cca016
+* Partition:            htc
+* Quality of service:   normal
+* Nodelist:             ccwslurm0144
+* Operating System:     Red Hat Enterprise Linux release 9.8 (Plow)
+* Architecture:         x86_64
+**********************************************************************
+****************************************************************
+*                      SLURM Batch System                      *
+*           IN2P3 Computing Centre, Villeurbanne FR            *
+****************************************************************
+Date: Fri Nov 20 04:42:54 PM CET 2026
+Job informations can be found using these commands:
+Accounting:
+sacct -j 64524443
+Efficiency:
+seff 64524443
+****************************************************************

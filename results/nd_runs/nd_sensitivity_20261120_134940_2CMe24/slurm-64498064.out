@@ -1,0 +1,126 @@
+**********************************************************************
+*                         SLURM Batch System                         *
+*              IN2P3 Computing Centre, Villeurbanne FR               *
+**********************************************************************
+* Date:                 Fri Nov 20 01:49:40 PM CET 2026
+* Job name:             nd_sensitivity
+* Job id:               64498064
+* User:                 mpetro
+* Account:              nemo
+* Submit host:          cca017
+* Partition:            htc
+* Quality of service:   normal
+* Nodelist:             ccwslurm0160
+* Operating System:     Red Hat Enterprise Linux release 9.8 (Plow)
+* Architecture:         x86_64
+**********************************************************************
+creating process: bb
+creating process: bb0nuM1
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
+creating process: bb
+creating process: bb0nuM1
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
++-----------+------------+------------+------------+------------+
+| Iteration | Num. Evals |   Minimum  |    Time    | Converged  |
++-----------+------------+------------+------------+------------+
+|         1 |        150 | -2.8791e-04 |   0.1572 s |         No | 
+|         2 |        299 | -4.8229e-04 |   7.9190 s |         No | 
+|         3 |        449 | -4.8229e-04 |  19.1834 s |         No | 
+|         4 |        599 | -4.8235e-04 |  34.0803 s |         No | 
+|         5 |        749 | -4.8235e-04 |  51.2871 s |         No | 
+|         6 |        899 | -4.8235e-04 |  66.3128 s |         No | 
+|         7 |       1049 | -5.0440e-04 |  81.0634 s |         No | 
+|         8 |       1199 | -5.2054e-04 |  96.8847 s |         No | 
+|         9 |       1349 | -5.2054e-04 | 111.3250 s |         No | 
+|        10 |       1499 | -5.2054e-04 | 125.0395 s |         No | 
+|        11 |       1649 | -5.2366e-04 | 138.4819 s |         No | 
+|        12 |       1799 | -5.2627e-04 | 152.0124 s |         No | 
+|        13 |       1949 | -5.2627e-04 | 169.0574 s |         No | 
+|        14 |       2099 | -5.3711e-04 | 186.2842 s |         No | 
+|        15 |       2249 | -5.3711e-04 | 198.3732 s |         No | 
+|        16 |       2399 | -5.3711e-04 | 211.1181 s |         No | 
+|        17 |       2549 | -5.3711e-04 | 228.4413 s |         No | 
+|        18 |       2699 | -5.3711e-04 | 242.5059 s |         No | 
+|        19 |       2849 | -5.3889e-04 | 255.3314 s |         No | 
+|        20 |       2999 | -5.3953e-04 | 268.9280 s |         No | 
+|        21 |       3149 | -5.3953e-04 | 282.1572 s |         No | 
+|        22 |       3299 | -5.3953e-04 | 296.1345 s |         No | 
+|        23 |       3449 | -5.3953e-04 | 309.7509 s |         No | 
+|        24 |       3599 | -5.4169e-04 | 323.0199 s |         No | 
+|        25 |       3749 | -5.4227e-04 | 337.4126 s |         No | 
+|        26 |       3899 | -5.4227e-04 | 351.6188 s |         No | 
+|        27 |       4049 | -5.4227e-04 | 363.8507 s |         No | 
+|        28 |       4199 | -5.4266e-04 | 377.9887 s |         No | 
+|        29 |       4349 | -5.4357e-04 | 392.9765 s |         No | 
+|        30 |       4499 | -5.4357e-04 | 406.0963 s |         No | 
+|        31 |       4649 | -5.4511e-04 | 419.7845 s |         No | 
+|        32 |       4799 | -5.4531e-04 | 433.0723 s |         No | 
+|        33 |       4949 | -5.4531e-04 | 444.8525 s |         No | 
+|        34 |       5099 | -5.4531e-04 | 456.6662 s |         No | 
+|        35 |       5249 | -5.4570e-04 | 469.3778 s |         No | 
+|        36 |       5399 | -5.4612e-04 | 480.2628 s |         No | 
+|        37 |       5549 | -5.4692e-04 | 493.0132 s |         No | 
+|        38 |       5699 | -5.4692e-04 | 504.8436 s |         No | 
+minimum(result) = -0.0005469230112970829
+res = minimizer(result) = [11.806889620902282, 19.36089451206998, 0.0, 36.0, 0.0, 12.571070021016462, 0.0, 40.0, 0.0, 5.9633794956630855, 7.278430031673806, 70.0, 7.307419241405403, 70.0, 25.0]
+
+===== BEST RESULT =====
+Signal process = bb0nuM1
+Optimized numeric cuts: (vertex_distance = 300.0,)
+tHalf: 4.869897323385154e22
+signalEff: 0.0240536
+bkg count: 714.9131129145018
+best ROI:
+  energy_elec_sum : (2.2, 2.9000000000000004)
+  angle_3D_between_ep_em : (0.0, 180.0)
+  delta_y_elec : (0.0, 65.0)
+  delta_z_elec : (0.0, 200.0)
+  diff_time_elec : (0.0, 1.5)
+  energy_elec_1 : (0.35000000000000003, 3.5)
+  energy_elec_2 : (0.35000000000000003, 3.5)
+  __nd_cut_vertex_distance : (0.0, 300.0)
+****************************************************************
+*                      SLURM Batch System                      *
+*           IN2P3 Computing Centre, Villeurbanne FR            *
+****************************************************************
+Date: Fri Nov 20 02:02:27 PM CET 2026
+Job informations can be found using these commands:
+Accounting:
+sacct -j 64498064
+Efficiency:
+seff 64498064
+****************************************************************
