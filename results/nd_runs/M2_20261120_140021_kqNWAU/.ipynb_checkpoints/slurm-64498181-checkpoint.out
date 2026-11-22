@@ -1,0 +1,116 @@
+**********************************************************************
+*                         SLURM Batch System                         *
+*              IN2P3 Computing Centre, Villeurbanne FR               *
+**********************************************************************
+* Date:                 Fri Nov 20 02:00:21 PM CET 2026
+* Job name:             M2
+* Job id:               64498181
+* User:                 mpetro
+* Account:              nemo
+* Submit host:          cca011
+* Partition:            htc
+* Quality of service:   normal
+* Nodelist:             ccwslurm0109
+* Operating System:     Red Hat Enterprise Linux release 9.8 (Plow)
+* Architecture:         x86_64
+**********************************************************************
+creating process: bb
+creating process: bb0nuM2
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
+creating process: bb
+creating process: bb0nuM2
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
+creating process: bb
+creating process: bb0nuM2
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
+creating process: bb
+creating process: bb0nuM2
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
+creating process: bb
+creating process: bb0nuM2
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt

@@ -18,5 +18,4 @@ Job42.cpp
 *.log
 /data/mathis_files_downloaded/
 *.root.part
-/results/
 /scripts/out/
