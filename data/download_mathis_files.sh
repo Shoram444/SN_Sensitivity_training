@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Download all data files of a given phase (default: phase_3) listed in
-# data/mathis_data_info_final.csv from CC-IN2P3 into data/mathis_files_downloaded via scp.
+# data/mathis_data_info_final.csv from CC-IN2P3 into data/mathis_files_local via scp
+# (data/mathis_files is a symlink valid only on the cluster). Override with OUT_DIR=...
 #
 # Usage:
 #   ./data/download_mathis_files.sh [phase]            # e.g. phase_3 (default)
@@ -26,7 +27,7 @@ FORCE="${FORCE:-0}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 CSV="$PROJECT_DIR/data/mathis_data_info_final.csv"
-OUT_DIR="$PROJECT_DIR/data/mathis_files_downloaded"
+OUT_DIR="${OUT_DIR:-$PROJECT_DIR/data/mathis_files_local}"
 
 [[ -f "$CSV" ]] || { echo "CSV not found: $CSV" >&2; exit 1; }
 

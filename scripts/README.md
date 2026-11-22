@@ -134,3 +134,77 @@ Errors go to stderr; affected rows have an empty `nb_events` and the command
 exits nonzero. The output is a separate report and does not change either
 metadata CSV. The parameter is copied exactly, without adding one or reading
 tree entries; its count-versus-last-ID convention still needs confirmation.
+
+## Data vs simulation
+
+### 1. Run times (cluster)
+
+Each per-run ROOT file stores its duration in the `run_time` parameter. On
+the cluster, list it for every file in the default directory
+`/sps/nemo/scratch/granjon/double_beta/cimrman_curve/ptd_pol2/root_with_max_threshold_working`:
+
+```bash
+module load root
+bash scripts/list_run_times.sh > data/real_data/run_times.csv
+# or another directory and file-name pattern:
+bash scripts/list_run_times.sh DIRECTORY 'run_*.root' > data/real_data/run_times.csv
+```
+
+The CSV has `file_path,run_number,run_time`. The run number is taken from the
+first event of the `Event` tree, or from `run_NNNN` in the file name when the
+tree is empty. Errors go to stderr and the command exits nonzero; affected
+rows have empty fields. Do not include merged files: the comparison rejects
+run numbers listed more than once.
+
+### 2. Comparison
+
+```bash
+julia --project=. scripts/compare_data_simulation.jl \
+    --results=results/nd_runs/<run>/results.csv
+```
+
+The script reads the best ROI from `results.csv` and the fixed cuts
+(topological switches and `:fixed` numeric cuts) from `settings.jl` next to
+it. It applies the same cuts as the analysis to the phase backgrounds from the
+metadata CSV and to the data. The energy-sum window is not applied; it is
+shaded, as in the background report. Simulations are normalized to counts/day
+with `amount * activity_bq * 86400 / nb_events` per event, data with the summed
+`run_time` (assumed in seconds) of the selected runs.
+
+Options (`--name=value`; relative paths are relative to the project root):
+
+- `--settings`: settings file [`settings.jl` next to the results].
+- `--metadata`: [`data/mathis_data_info_final_2.csv`].
+- `--data`: [`data/real_data/run_3470-4427.root`].
+- `--run-times`: [`data/real_data/run_times.csv`].
+- `--runs`: `data` uses the runs present in the data file [default];
+  `FIRST:LAST` keeps only data events from those runs and sums the run time
+  of all listed runs in the range (warning about runs without events).
+- `--sim-dir`: replaces the `data/mathis_files` prefix of metadata paths,
+  e.g. `--sim-dir=data/mathis_files_local` for a local copy (on the cluster,
+  `data/mathis_files` is a symlink to the simulation directory).
+- `--output-dir`: [directory of the results file].
+- `--edges`: energy-sum binning `MIN:STEP:MAX` in MeV [`0:0.05:4`].
+- `--chi2-range`: `MIN:MAX` in MeV used for χ² [the whole binning].
+
+Outputs:
+
+- `data_vs_simulation.png`/`.pdf`: simulated components (PMTs grouped), total
+  simulation with ±1σ MC statistical band, and data with Poisson errors; below,
+  residuals `(n − μ) / sqrt(μ + σ²_MC)` in counts. Bins outside the χ² range
+  are faded; residuals beyond the axis are drawn as triangles.
+- `data_vs_simulation_bins.csv`: per-bin rates, errors and residuals.
+- `data_vs_simulation_summary.csv`: events and counts/day per background,
+  total simulation and data, over the full binning and in the energy ROI.
+- `data_vs_simulation_stats.csv`: live time, runs, sensitivity and
+  χ²/ndf. `chi2` is Pearson's `Σ (n − μ)² / (μ + σ²_MC)` over bins with
+  `μ > 0`; `chi2_poisson` is the Baker–Cousins likelihood ratio. Nothing is
+  fitted, so `ndf` is the number of bins used. Bins with data but no
+  simulation are excluded and counted.
+
+The script warns if the simulated ROI background times `SNparams["t"]` does not
+reproduce `best_bkg` in `results.csv`, e.g. after metadata changes.
+
+```bash
+julia --project=. tests/test_compare_data_simulation.jl
+```
