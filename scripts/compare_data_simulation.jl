@@ -509,8 +509,10 @@ function run_comparison(config, settings)
     end
     live_seconds, runs = live_time(config.run_times, data_runs, config.runs)
     live_days = live_seconds / SECONDS_PER_DAY
-    start_times = collect(data_table.unix_start_time)
-    @info "Data live time" runs = length(runs) first_run = first(runs) last_run = last(runs) live_days span_of_run_start_days = (maximum(start_times) - minimum(start_times)) / SECONDS_PER_DAY
+    # Some runs store unix_start_time = -1; the span is only a sanity check.
+    start_times = filter(>(0), collect(data_table.unix_start_time))
+    span_days = isempty(start_times) ? NaN : (maximum(start_times) - minimum(start_times)) / SECONDS_PER_DAY
+    @info "Data live time" runs = length(runs) first_run = first(runs) last_run = last(runs) live_days span_of_run_start_days = span_days
     data_energies = select_energies(data_table, sel)
     data_counts = bin_counts(data_energies, edges)
     data_roi = in_window(data_energies, energy_roi)
