@@ -185,8 +185,10 @@ Options (`--name=value`; relative paths are relative to the project root):
   `FIRST:LAST` keeps only data events from those runs and sums the run time
   of all listed runs in the range (warning about runs without events).
 - `--sim-dir`: replaces the `data/mathis_files` prefix of metadata paths,
-  e.g. `--sim-dir=data/mathis_files_local` for a local copy (on the cluster,
-  `data/mathis_files` is a symlink to the simulation directory).
+  e.g. `--sim-dir=data/mathis_files_local` for a local copy made with
+  `./data/download_mathis_files.sh [PHASE ...]`. On the cluster,
+  `data/mathis_files` is an untracked symlink to the simulation directory;
+  create it once with `ln -s <simulation directory> data/mathis_files`.
 - `--output-dir`: [directory of the results file].
 - `--edges`: energy-sum binning `MIN:STEP:MAX` in MeV [`0:0.05:4`].
 - `--chi2-range`: `MIN:MAX` in MeV used for χ² [the whole binning].

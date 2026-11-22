@@ -18,6 +18,10 @@ Job42.cpp
 *.log
 /data/mathis_files_downloaded/
 /data/mathis_files_local/
+# Cluster-only symlinks to the simulations and local data copies.
+/data/mathis_files
+/data/mathis_files_reduced
+/data/real_data/
 *.root.part
 /results/
 /scripts/out/

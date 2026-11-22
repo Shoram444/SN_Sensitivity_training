@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 #
-# Download all data files of a given phase (default: phase_3) listed in
-# data/mathis_data_info_final.csv from CC-IN2P3 into data/mathis_files_local via scp
-# (data/mathis_files is a symlink valid only on the cluster). Override with OUT_DIR=...
+# Download every simulation file listed in data/mathis_data_info_final_2.csv
+# (optionally only some phases) from CC-IN2P3 via scp.
+#
+# Files under data/mathis_files/ go to data/mathis_files_local/ (data/mathis_files
+# is a symlink valid only on the cluster); other paths, e.g. data/majoron_reduced/,
+# go to the same path in the local project. Use the local copy in the comparison
+# with --sim-dir=data/mathis_files_local.
 #
 # Usage:
-#   ./data/download_mathis_files.sh [phase]            # e.g. phase_3 (default)
+#   ./data/download_mathis_files.sh                    # all files in the CSV
+#   ./data/download_mathis_files.sh phase_3 phase_4    # only these phases
 #   DRY_RUN=1 ./data/download_mathis_files.sh          # only print what would be copied
 #   REMOTE_HOST=cca018.in2p3.fr ./data/download_mathis_files.sh
+#   CSV=data/other.csv OUT_DIR=/path ./data/download_mathis_files.sh
 #
 # Files already downloaded completely (local size == remote size) are skipped, so an
 # interrupted run can simply be restarted. Incomplete files are re-downloaded.
@@ -16,7 +22,7 @@
 
 set -euo pipefail
 
-PHASE="${1:-phase_3}"
+PHASES=("$@")
 REMOTE_HOST="${REMOTE_HOST:-cca.in2p3.fr}"
 REMOTE_USER="${REMOTE_USER:-mpetro}"
 # Project directory on CC; file_path entries in the CSV are relative to it.
@@ -26,7 +32,7 @@ FORCE="${FORCE:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-CSV="$PROJECT_DIR/data/mathis_data_info_final.csv"
+CSV="${CSV:-$PROJECT_DIR/data/mathis_data_info_final_2.csv}"
 OUT_DIR="${OUT_DIR:-$PROJECT_DIR/data/mathis_files_local}"
 
 [[ -f "$CSV" ]] || { echo "CSV not found: $CSV" >&2; exit 1; }
@@ -43,7 +49,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Map a CSV file_path to its remote path and to a local path relative to OUT_DIR.
+# Map a CSV file_path to its remote path and to its local destination.
 remote_path() {
     case "$1" in
         /*) echo "$1" ;;
@@ -52,20 +58,29 @@ remote_path() {
 }
 local_path() {
     case "$1" in
-        data/mathis_files/*) echo "${1#data/mathis_files/}" ;;
-        data/*)              echo "${1#data/}" ;;
-        /*)                  echo "${1#/}" ;;
-        *)                   echo "$1" ;;
+        data/mathis_files/*) echo "$OUT_DIR/${1#data/mathis_files/}" ;;
+        /*)                  echo "$OUT_DIR/${1#/}" ;;
+        *)                   echo "$PROJECT_DIR/$1" ;;
     esac
 }
 
 FILES=()
 while IFS= read -r f; do FILES+=("$f"); done < <(
-    awk -F, -v phase="$PHASE" 'NR > 1 && $1 == phase { print $4 }' "$CSV" | sort -u
+    awk -F, -v phases="${PHASES[*]:-}" '
+        NR == 1 {
+            for (i = 1; i <= NF; i++) { if ($i == "phase") pc = i; if ($i == "file_path") fc = i }
+            if (!pc || !fc) { print "CSV needs phase and file_path columns" > "/dev/stderr"; exit 1 }
+            n = split(phases, wanted, " "); for (i = 1; i <= n; i++) keep[wanted[i]] = 1
+            next
+        }
+        n == 0 || ($pc in keep) { print $fc }
+    ' "$CSV" | sort -u
 )
 
-[[ ${#FILES[@]} -gt 0 ]] || { echo "No files found for $PHASE in $CSV" >&2; exit 1; }
-echo "Found ${#FILES[@]} files for $PHASE. Destination: $OUT_DIR"
+selection="${PHASES[*]:-all phases}"
+[[ ${#FILES[@]} -gt 0 ]] || { echo "No files found for $selection in $CSV" >&2; exit 1; }
+echo "Found ${#FILES[@]} files for $selection in $CSV."
+echo "Destination: $OUT_DIR for data/mathis_files/*, the project directory for other paths."
 
 echo "Opening SSH connection to $REMOTE ..."
 ssh "${SSH_OPTS[@]}" -fN "$REMOTE"
@@ -81,7 +96,7 @@ local_size()  { [[ -f "$1" ]] && wc -c < "$1" | tr -d ' ' || echo ""; }
 n_ok=0; n_skip=0; n_todo=0; failed=()
 for f in "${FILES[@]}"; do
     src="$(remote_path "$f")"
-    dst="$OUT_DIR/$(local_path "$f")"
+    dst="$(local_path "$f")"
 
     rsize="$(remote_size "$f")"
     lsize="$(local_size "$dst")"
