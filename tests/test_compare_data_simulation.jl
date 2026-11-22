@@ -70,7 +70,11 @@ end
 
         write(path, "file_path,run_number,run_time\n\"a.root\",10,100.0\n\"merged.root\",10,175.0\n")
         @test_throws ErrorException live_time(path, [10], :data)
-        write(path, "file_path,run_number,run_time\n\"a.root\",10,\n")
+        write(path, "file_path,run_number,run_time\n\"a.root\",10,100.0\n\"b.root\",11,\n")
+        @test (@test_logs (:warn,) live_time(path, [10], :data)) == (100.0, [10])
+        @test_throws ErrorException live_time(path, [10, 11], :data)
+        @test_throws ErrorException live_time(path, [10], 10:11)
+        write(path, "file_path,run_number,run_time\n\"a.root\",,\n")
         @test_throws ErrorException live_time(path, [10], :data)
     end
 end

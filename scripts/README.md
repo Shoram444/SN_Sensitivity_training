@@ -155,8 +155,10 @@ No other files are read. The CSV has `file_path,run_number,run_time`; the run
 number comes from the directory name (leading zeros removed). A warning is
 printed when the first event's `run_number` differs, and for `run_*`
 directories without `extracted_data.root`. Errors go to stderr and the
-command exits nonzero; affected rows have empty fields. The comparison
-rejects run numbers listed more than once.
+command exits nonzero; unreadable files keep their run number but have an
+empty `run_time`. The comparison ignores such runs with a warning unless they
+are selected (a data run, or within `--runs=FIRST:LAST`), and rejects run
+numbers listed more than once.
 
 ### 2. Comparison
 

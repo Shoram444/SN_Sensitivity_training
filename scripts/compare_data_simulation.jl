@@ -295,17 +295,24 @@ end
 function live_time(run_times_path, data_runs, runs)
     isfile(run_times_path) || error("Run time CSV not found: $run_times_path (create it with scripts/list_run_times.sh)")
     df = CSV.read(run_times_path, DataFrame; types = Dict(:file_path => String))
-    broken = df.file_path[ismissing.(df.run_number) .| ismissing.(df.run_time)]
-    isempty(broken) || error("Missing run number or run time in $run_times_path for: $(join(broken, ", "))")
+    unnamed = df.file_path[ismissing.(df.run_number)]
+    isempty(unnamed) || error("Missing run number in $run_times_path for: $(join(unnamed, ", "))")
     duplicated = [r for r in unique(df.run_number) if count(==(r), df.run_number) > 1]
     isempty(duplicated) || error(
         "Runs listed more than once in $run_times_path (merged or duplicate files?): ",
         join(["$r ($(join(df.file_path[df.run_number .== r], ", ")))" for r in duplicated], "; "))
-    times = Dict(Int(r) => Float64(t) for (r, t) in zip(df.run_number, df.run_time))
+    # Rows without run_time are files that could not be read; fatal only if selected.
+    failed = Set(Int.(df.run_number[ismissing.(df.run_time)]))
+    times = Dict(Int(r) => Float64(t) for (r, t) in zip(df.run_number, df.run_time) if !ismissing(t))
     data_set = Set(data_runs)
     selected = runs === :data ? sort!(collect(data_set)) : [r for r in runs if haskey(times, r)]
     without_time = [r for r in selected if !haskey(times, r)]
     isempty(without_time) || error("No run time for data runs: $(join(without_time, ", "))")
+    unused_failed = sort!(collect(setdiff(failed, data_set)))
+    runs === :data || filter!(!in(runs), unused_failed)
+    isempty(unused_failed) || @warn "Ignoring unreadable run files outside the selection" runs = unused_failed
+    failed_in_range = runs === :data ? Int[] : sort!(collect(intersect(failed, Set(runs))))
+    isempty(failed_in_range) || error("No run time for runs in the selected range: $(join(failed_in_range, ", "))")
     if runs !== :data
         no_events = [r for r in selected if !(r in data_set)]
         isempty(no_events) || @warn "Runs with a run time but no data events are counted in the live time" runs = no_events seconds = sum(times[r] for r in no_events)

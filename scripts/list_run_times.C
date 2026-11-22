@@ -80,10 +80,11 @@ void list_run_times() {
         while (std::getline(input, path, '\0')) {
             ++files;
             output << csv_field(path) << ',';
+            std::string run;
             try {
+                run = directory_run_number(path);
                 std::unique_ptr<TFile> file(TFile::Open(path.c_str(), "READ"));
                 if (!file || file->IsZombie()) throw std::runtime_error("cannot open ROOT file");
-                const std::string run = directory_run_number(path);
                 const double time = run_time(file->Get("run_time"));
                 const std::string from_tree = tree_run_number(*file);
                 if (!from_tree.empty() && from_tree != run) {
@@ -92,7 +93,7 @@ void list_run_times() {
                 output << run << ',' << time;
             } catch (const std::exception& error) {
                 std::cerr << path << ": " << error.what() << '\n';
-                output << ',';
+                output << run << ',';
                 ++failures;
             }
             output << '\n';
