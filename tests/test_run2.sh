@@ -8,9 +8,10 @@ tmp=$(cd "$tmp" && pwd -P)
 run1=""
 run2=""
 run3=""
+run4=""
 cleanup() {
     local dir
-    for dir in "$run1" "$run2" "$run3"; do
+    for dir in "$run1" "$run2" "$run3" "$run4"; do
         if [[ -n "$dir" && "$dir" == "$tmp/runs/"* ]]; then
             rm -f "$dir/config.conf" "$dir/settings.jl" "$dir/analysis.jl" "$dir/auxiliary.jl" "$dir/job.sh" "$dir/job_id.txt"
             rmdir "$dir"
@@ -67,6 +68,13 @@ bash -n "$run3/job.sh"
 [[ $(grep -c 'julia --project=' "$run3/job.sh") == 2 ]]
 [[ $(tail -n 2 "$run3/job.sh" | head -n 1) == "julia "*analysis.jl ]]
 [[ $(tail -n 1 "$run3/job.sh") == "exec julia "*"scripts/compare_data_simulation.jl --results=$run3/results.csv" ]]
+! grep -q 'use_dead_om_map' "$run3/settings.jl"
+
+output=$(bash "$project_dir/scripts/run2.sh" "$tmp/example.conf" --dry-run --use_dead_om_map=true)
+run4=${output%%$'\n'*}
+run4=${run4#Run directory: }
+grep -Fxq 'global use_dead_om_map = true' "$run4/settings.jl"
+grep -Fq 'keep .&= .!cut_dead_om' "$run4/analysis.jl"
 if bash "$project_dir/scripts/run2.sh" "$tmp/example.conf" --use_data_validation=yes --dry-run >/dev/null 2>&1; then
     echo "Invalid data validation flag was accepted" >&2
     exit 1

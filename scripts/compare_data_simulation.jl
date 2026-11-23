@@ -12,6 +12,7 @@ using SNSensitivityEstimate: SNparams
 
 const PROJECT_DIR = dirname(@__DIR__)
 include(joinpath(PROJECT_DIR, "analysis", "nd_background_report.jl"))
+include(joinpath(PROJECT_DIR, "analysis", "dead_om_map.jl"))
 
 const SECONDS_PER_DAY = 86400.0
 const SIM_PREFIX = "data/mathis_files/"
@@ -155,6 +156,7 @@ function load_settings(path)
         use_om_cut = get_setting(:use_om_cut),
         use_vertex_region_cut = get_setting(:use_vertex_region_cut),
         use_bad_om_list = isdefined(m, :use_bad_om_list) ? getfield(m, :use_bad_om_list) : true,
+        use_dead_om_map = isdefined(m, :use_dead_om_map) ? getfield(m, :use_dead_om_map) : false,
         nd_numeric_cuts = get_setting(:nd_numeric_cuts),
     )
 end
@@ -177,7 +179,7 @@ const CUT_PREFIX = "__nd_cut_"
 # Same cuts as the ND analysis: ROI windows on abs(value) (energy sum excluded,
 # it is histogrammed), topological cuts, fixed numeric cuts and the optimized
 # numeric thresholds from the best ROI.
-function build_selection(settings, roi, bad_oms)
+function build_selection(settings, roi, bad_oms; dead_om = nothing)
     haskey(roi, :energy_elec_sum) || error("The best ROI has no energy_elec_sum window")
     cuts = Dict(cut.name => cut for cut in settings.nd_numeric_cuts)
     windows = Pair{Symbol,Tuple{Float64,Float64}}[]
@@ -207,6 +209,7 @@ function build_selection(settings, roi, bad_oms)
         use_om_cut = settings.use_om_cut,
         use_vertex_region_cut = settings.use_vertex_region_cut,
         bad_oms = bad_oms,
+        dead_om = dead_om,
         var_names = var_names,
     )
 end
@@ -241,7 +244,8 @@ function topological_veto(table, sel)
 end
 
 # abs(energy_elec_sum) of the events passing every cut except the energy window.
-function select_energies(table, sel)
+# data = true takes dead OM veto times from current_timestamp.
+function select_energies(table, sel; data = false)
     keep = trues(length(table))
     for (name, (lo, hi)) in sel.windows
         values = abs.(getproperty(table, name))
@@ -250,6 +254,10 @@ function select_energies(table, sel)
     any(keep) || return Float64[]
     table = table[keep]
     keep = .!topological_veto(table, sel)
+    if sel.dead_om !== nothing
+        intervals, live = sel.dead_om
+        keep .&= .!dead_om_veto(table, intervals, live; times = data ? collect(table.current_timestamp) : nothing)
+    end
     for cut in sel.fixed
         keep .&= cut.comparison.(map(cut.value, table), cut.fixed)
     end
@@ -494,7 +502,16 @@ function run_comparison(config, settings)
         Set{Int}()
     end
     @info "Bad OM list" settings.use_bad_om_list length(bad_oms)
-    sel = build_selection(settings, results.roi, bad_oms)
+    # Same dead OM map treatment as the analysis: data by event time, simulation
+    # by a time drawn from the live time of the whole data file.
+    dead_om = if settings.use_dead_om_map
+        (read_dead_om_map(joinpath(PROJECT_DIR, DEAD_OM_MAP_FILE), joinpath(PROJECT_DIR, OM_GID_MAP_FILE)),
+         data_live_time(config.data, config.run_times))
+    else
+        nothing
+    end
+    @info "Dead OM map" settings.use_dead_om_map
+    sel = build_selection(settings, results.roi, bad_oms; dead_om)
     edges = config.edges
     energy_roi = results.roi.energy_elec_sum
     @info "Best ROI" results.roi
@@ -512,7 +529,7 @@ function run_comparison(config, settings)
         isfile(path) || error("Simulation file not found: $path (use --sim-dir for a local copy)")
         @info "Reading $(row.name)" path
         table = LazyTree(ROOTFile(path), "Event", sel.var_names)
-        energies = select_energies(table, sel)
+        energies = select_energies(table, sel; data = false)
         counts = bin_counts(energies, edges)
         n_roi = in_window(energies, energy_roi)
         weight = row.amount * row.activity_bq * SECONDS_PER_DAY / row.nb_events
@@ -534,7 +551,7 @@ function run_comparison(config, settings)
 
     # Data, normalized by the summed run_time of the selected runs.
     @info "Reading data" config.data
-    data_table = LazyTree(ROOTFile(config.data), "Event", [sel.var_names; "run_number"; "unix_start_time"])
+    data_table = LazyTree(ROOTFile(config.data), "Event", [sel.var_names; "run_number"; "unix_start_time"; "current_timestamp"])
     event_runs = Int.(collect(data_table.run_number))
     data_runs = unique(event_runs)
     if config.runs !== :data
@@ -549,7 +566,7 @@ function run_comparison(config, settings)
     start_times = filter(>(0), collect(data_table.unix_start_time))
     span_days = isempty(start_times) ? NaN : (maximum(start_times) - minimum(start_times)) / SECONDS_PER_DAY
     @info "Data live time" runs = length(runs) first_run = first(runs) last_run = last(runs) live_days span_of_run_start_days = span_days
-    data_energies = select_energies(data_table, sel)
+    data_energies = select_energies(data_table, sel; data = true)
     data_counts = bin_counts(data_energies, edges)
     data_roi = in_window(data_energies, energy_roi)
     push!(summary, ("Data", sum(data_counts), data_roi, sum(data_counts) / live_days,

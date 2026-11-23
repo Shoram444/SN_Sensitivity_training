@@ -63,6 +63,19 @@ else
     @info "Bad OM list disabled; events in listed OMs are kept"
 end
 
+# Time-dependent dead OM map (analysis/dead_om_map.jl): simulated events get a
+# time drawn from the live time of the data and are vetoed if an electron OM
+# was dead then. Off unless use_dead_om_map = true.
+isdefined(Main, :use_dead_om_map) || (global use_dead_om_map = false)
+isdefined(Main, :dead_om_data_file) || (global dead_om_data_file = joinpath("data", "real_data", "run_3470-4427.root"))
+isdefined(Main, :dead_om_run_times) || (global dead_om_run_times = joinpath("data", "real_data", "run_times.csv"))
+if use_dead_om_map
+    include(joinpath(PROJECT_DIR, "analysis", "dead_om_map.jl"))
+    dead_om_intervals = read_dead_om_map(joinpath(PROJECT_DIR, DEAD_OM_MAP_FILE), joinpath(PROJECT_DIR, OM_GID_MAP_FILE))
+    dead_om_live = data_live_time(joinpath(PROJECT_DIR, dead_om_data_file), joinpath(PROJECT_DIR, dead_om_run_times))
+    @info "Dead OM map enabled" oms = length(dead_om_intervals) live_days = dead_om_live.total / 86400
+end
+
 # Only load the selected signal and backgrounds for this phase.
 selected_files = @chain data_info begin
     @subset :phase .== phase
@@ -256,7 +269,10 @@ for i in eachindex(filtered_data_tables_nd)
         end
     end
 
+    cut_dead_om = use_dead_om_map ? dead_om_veto(table, dead_om_intervals, dead_om_live) : falses(n_evt)
+
     keep = .!(cut_same_calo .| cut_kinks .| cut_om_size .| cut_om_range .| cut_vertex_region)
+    keep .&= .!cut_dead_om
     filtered_data_tables_nd[i] = table[keep]
 end
 

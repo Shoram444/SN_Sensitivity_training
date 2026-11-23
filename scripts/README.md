@@ -31,6 +31,27 @@ bash scripts/run2.sh configs/nd_sensitivity.example.conf
 
 # Also compare the result with measured data after the analysis.
 bash scripts/run2.sh configs/nd_sensitivity.example.conf --use_data_validation=true
+
+# Veto dead OMs with the time-dependent map instead of (or besides) the list.
+bash scripts/run2.sh configs/nd_sensitivity.example.conf --use_dead_om_map=true
+```
+
+With `--use_dead_om_map=true`, `run2.sh` appends `global use_dead_om_map =
+true` to the run's `settings.jl` (the setting can also be written in the
+configuration). [`analysis/dead_om_map.jl`](../analysis/dead_om_map.jl) reads
+[`data/dead_om_map_all_phases.csv`](../data/dead_om_map_all_phases.csv)
+(dead periods per OM, times taken as UTC) and
+[`data/snemo_om_num_gid_map.csv`](../data/snemo_om_num_gid_map.csv) (GID to OM
+number). A data event is vetoed if one of its electron OMs was dead at its
+`current_timestamp`. A simulated event, signal or background, gets a time
+distributed like the data live time (each run from its first event for its
+`run_time`, from `data/real_data/run_3470-4427.root` and `run_times.csv`; set
+`dead_om_data_file`/`dead_om_run_times` to change) and the same veto. The time
+is a hash of the event's energies, so the optimization and the data comparison
+veto the same simulated events. The map only covers the phase 4 data period.
+
+```bash
+julia --project=. tests/test_dead_om_map.jl
 ```
 
 With `--use_data_validation=true`, `job.sh` runs

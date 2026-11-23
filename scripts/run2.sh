@@ -2,12 +2,15 @@
 
 # Prepare one reproducible run and submit it to SLURM.
 # Usage: bash scripts/run2.sh CONFIG [--dry-run] [--use_data_validation=true|false]
+#                              [--use_dead_om_map=true|false]
 # With --use_data_validation=true the job compares the result with measured
 # data (scripts/compare_data_simulation.jl) after the analysis.
+# With --use_dead_om_map=true simulations and data are vetoed with the
+# time-dependent dead OM map (analysis/dead_om_map.jl).
 set -euo pipefail
 
 usage() {
-    echo "Usage: bash $0 CONFIG [--dry-run] [--use_data_validation=true|false]" >&2
+    echo "Usage: bash $0 CONFIG [--dry-run] [--use_data_validation=true|false] [--use_dead_om_map=true|false]" >&2
     exit 2
 }
 (( $# >= 1 )) || usage
@@ -15,10 +18,12 @@ config=$1
 shift
 dry_run=""
 use_data_validation=false
+use_dead_om_map=false
 for arg in "$@"; do
     case "$arg" in
         --dry-run) dry_run=--dry-run ;;
         --use_data_validation=true|--use_data_validation=false) use_data_validation=${arg#*=} ;;
+        --use_dead_om_map=true|--use_dead_om_map=false) use_dead_om_map=${arg#*=} ;;
         *) usage ;;
     esac
 done
@@ -100,6 +105,9 @@ run_dir=$(cd "$run_dir" && pwd -P)
 cp "$config" "$run_dir/config.conf"
 sed -n '/^# BEGIN JULIA CONFIG$/,/^# END JULIA CONFIG$/{ /^# BEGIN JULIA CONFIG$/d; /^# END JULIA CONFIG$/d; p; }' \
     "$run_dir/config.conf" > "$run_dir/settings.jl"
+if [[ "$use_dead_om_map" == true ]]; then
+    printf '\n# Added by run2.sh --use_dead_om_map=true\nglobal use_dead_om_map = true\n' >> "$run_dir/settings.jl"
+fi
 
 # Insert background selection immediately after the signal lookup. This keeps
 # the selected signal and rejects unknown background names before ROOT loading.
