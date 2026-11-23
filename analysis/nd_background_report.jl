@@ -128,7 +128,8 @@ function save_background_report(output_dir, phase, signal_process, files, tables
     spectra = Dict{String,Vector{Float64}}()
     variances = Dict{String,Vector{Float64}}()
     summary = DataFrame(
-        process = String[], mc_events_roi = Int[], mc_events_0_4_mev = Int[],
+        process = String[], activity_bq = Union{Float64,Missing}[],
+        mc_events_roi = Int[], mc_events_0_4_mev = Int[],
         expected_roi = Float64[], expected_0_4_mev = Float64[],
         mc_stat_error_roi = Float64[], mc_stat_error_0_4_mev = Float64[],
     )
@@ -137,7 +138,7 @@ function save_background_report(output_dir, phase, signal_process, files, tables
         weight = row.amount * row.activity_bq * live_time / row.nb_events
         name = String(row.name)
         n_full = sum(bins)
-        push!(summary, (name, n_roi, n_full, weight * n_roi, weight * n_full,
+        push!(summary, (name, row.amount * row.activity_bq, n_roi, n_full, weight * n_roi, weight * n_full,
                         abs(weight) * sqrt(n_roi), abs(weight) * sqrt(n_full)))
         # As in ex5, combine PMTs in the plot but keep each process in the CSV.
         group = occursin("pmt", name) ? "pmt" : name
@@ -148,7 +149,8 @@ function save_background_report(output_dir, phase, signal_process, files, tables
     expected_roi = sum(summary.expected_roi)
     isapprox(expected_roi, best_bkg; atol = 1e-10) ||
         error("Recomputed ROI background ($expected_roi) does not match the optimization ($best_bkg)")
-    push!(summary, ("Total", sum(summary.mc_events_roi), sum(summary.mc_events_0_4_mev),
+    # Activities of different sources are not summed.
+    push!(summary, ("Total", missing, sum(summary.mc_events_roi), sum(summary.mc_events_0_4_mev),
                     expected_roi, sum(summary.expected_0_4_mev),
                     sqrt(sum(abs2, summary.mc_stat_error_roi)),
                     sqrt(sum(abs2, summary.mc_stat_error_0_4_mev))))

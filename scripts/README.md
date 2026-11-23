@@ -69,7 +69,8 @@ energy-sum preselection.
   `background_spectrum.pdf`. The subtitle shows the signal used to optimize
   the ROI and the ⁸²Se exposure in kg·yr (process live time × foil mass ×
   enrichment `a`, i.e. 6.11 kg of ⁸²Se).
-- `background_components.csv`: passing MC events and expected counts per
+- `background_components.csv`: activity in Bq (`amount × activity_bq` from
+  the metadata; empty for the total), passing MC events and expected counts per
   background (plus a total) for the full best ROI and for
   `0 <= E_sum < 4 MeV` with only the energy-sum window replaced. The ROI total
   is checked against `best_bkg` in `results.csv`.

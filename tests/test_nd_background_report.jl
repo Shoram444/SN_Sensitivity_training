@@ -35,6 +35,7 @@ end
         @test !isfile(path) # The report uses the in-memory result, not a results CSV.
         report = CSV.read(joinpath(dir, "background_components.csv"), DataFrame)
         @test report.process == ["bb", "bi_pmt", "tl_pmt", "Total"]
+        @test isequal(report.activity_bq, [2.0, 2.0, 3.0, missing])
         @test report.mc_events_roi == [1, 1, 1, 3]
         @test report.mc_events_0_4_mev == [4, 1, 2, 7]
         @test report.expected_roi == [2.0, 4.0, 3.0, 9.0]
