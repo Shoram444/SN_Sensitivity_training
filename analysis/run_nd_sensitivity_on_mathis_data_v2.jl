@@ -310,7 +310,9 @@ flush(stdout)
 
 # STEP 2: Create DataProcessND objects.
 # Keep the original batch script's normalization to the full exposure.
-cached_names = [var_names_nd; String.(cut_column.(optimized_cuts))]
+# Typed explicitly: without optimized cuts the empty broadcast is a Vector{Any},
+# which DataProcessND rejects.
+cached_names = String[var_names_nd; String.(cut_column.(optimized_cuts))]
 cached_bounds = merge(var_bounds_nd, NamedTuple(cut_column(cut) => (0.0, Inf) for cut in optimized_cuts))
 processes_nd = [
     SNSensitivityEstimate.DataProcessND(

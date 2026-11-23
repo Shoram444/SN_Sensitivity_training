@@ -93,8 +93,8 @@ cat > "$run_dir/select_backgrounds.jl" <<'JULIA'
 if background_names !== :all
     available = Set(String.(selected_files.name[.!selected_files.is_signal]))
     requested = Set(String.(background_names))
-    missing = setdiff(requested, available)
-    isempty(missing) || error("Unknown backgrounds for $phase: $missing")
+    unknown = setdiff(requested, available)
+    isempty(unknown) || error("Unknown backgrounds for $phase: $unknown")
     selected_files = selected_files[
         selected_files.is_signal .| in.(selected_files.name, Ref(requested)), :
     ]
