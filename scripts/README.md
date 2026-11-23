@@ -196,17 +196,24 @@ Options (`--name=value`; relative paths are relative to the project root):
 Outputs:
 
 - `data_vs_simulation.png`/`.pdf`: simulated components (PMTs grouped), total
-  simulation with ±1σ MC statistical band, and data with Poisson errors; below,
-  residuals `(n − μ) / sqrt(μ + σ²_MC)` in counts. Bins outside the χ² range
-  are faded; residuals beyond the axis are drawn as triangles.
+  simulation (red) with ±1σ MC statistical band, and data (black) with central
+  68% Poisson (Garwood) intervals. The legend shows χ²/ndf and the p-value;
+  below, each bin's residual `sign(n − μ) · sqrt(χ²_bin)`, whose squares sum
+  to χ². Bins outside the χ² range are faded; residuals beyond the axis are
+  drawn as triangles.
 - `data_vs_simulation_bins.csv`: per-bin rates, errors and residuals.
 - `data_vs_simulation_summary.csv`: events and counts/day per background,
   total simulation and data, over the full binning and in the energy ROI.
-- `data_vs_simulation_stats.csv`: live time, runs, sensitivity and
-  χ²/ndf. `chi2` is Pearson's `Σ (n − μ)² / (μ + σ²_MC)` over bins with
-  `μ > 0`; `chi2_poisson` is the Baker–Cousins likelihood ratio. Nothing is
-  fitted, so `ndf` is the number of bins used. Bins with data but no
-  simulation are excluded and counted.
+- `data_vs_simulation_stats.csv`: live time, runs, sensitivity, χ²/ndf and
+  p-value. `chi2` is the Poisson likelihood ratio (Baker–Cousins)
+  `Σ 2(μ − n + n ln(n/μ))`, with each bin's simulation allowed to vary within
+  its MC statistical error (Barlow–Beeston lite), so it remains valid for bins
+  with few or no events. Nothing is fitted, so `ndf` is the number of bins with
+  `μ > 0`, and `p_value` is the χ²(ndf) probability of exceeding `chi2`.
+  `chi2_pearson` (`Σ (n − μ)² / (μ + σ²_MC)`) is kept for reference; it is
+  unreliable for bins expecting far below one event. Bins with data but no
+  simulation are excluded and counted. Bins expecting almost nothing add to
+  `ndf` but hardly to χ²; restrict them with `--chi2-range` if needed.
 
 The script warns if the simulated ROI background times `SNparams["t"]` does not
 reproduce `best_bkg` in `results.csv`, e.g. after metadata changes.

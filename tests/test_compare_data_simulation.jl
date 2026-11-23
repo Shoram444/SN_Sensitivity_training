@@ -80,16 +80,29 @@ end
 end
 
 @testset "Chi2" begin
+    baker_cousins(n, mu) = 2 * (mu - n + (n > 0 ? n * log(n / mu) : 0.0))
+    @test bin_chi2(9, 4.0, 0.0) ≈ baker_cousins(9, 4.0)
+    # The profiled MC normalization minimizes the deviance plus its Gaussian constraint.
+    profiled(n, mu, v) = minimum(b -> baker_cousins(n, b * mu) + (b - 1)^2 / (v / mu^2), 0.5:1e-5:2.0)
+    @test bin_chi2(9, 4.0, 1.0) ≈ profiled(9, 4.0, 1.0) rtol = 1e-6
+    @test bin_chi2(0, 4.0, 1.0) ≈ profiled(0, 4.0, 1.0) rtol = 1e-6
+    @test bin_chi2(9, 4.0, 1.0) < baker_cousins(9, 4.0)
+
     data = [4, 9, 0, 3, 5]
     model = [4.0, 4.0, 1.0, 0.0, 2.0]
     variance = [0.0, 1.0, 0.0, 0.0, 1.0]
     test = chi2_test(data, model, variance, [true, true, true, true, false])
     @test test.ndf == 3
     @test test.unpredicted_bins == 1
-    @test test.chi2 ≈ 0 + 25 / 5 + 1
-    @test test.chi2_poisson ≈ 2 * ((4 - 9 + 9 * log(9 / 4)) + 1)
-    @test residuals(data, model, variance)[1:3] ≈ [0.0, 5 / sqrt(5), -1.0]
-    @test isnan(residuals(data, model, variance)[4])
+    @test test.chi2 ≈ bin_chi2(9, 4.0, 1.0) + 2
+    @test test.chi2_pearson ≈ 25 / 5 + 1
+    pulls = residuals(data, model, variance)
+    @test pulls[1] == 0 && pulls[2] > 0 && pulls[3] < 0 && isnan(pulls[4])
+    @test sum(abs2, pulls[1:3]) ≈ test.chi2
+
+    @test poisson_interval(0) == (0.0, poisson_interval(0)[2])
+    @test all(isapprox.(poisson_interval(0), (0.0, 1.8410); atol = 1e-4))
+    @test all(isapprox.(poisson_interval(1), (0.1727, 3.2995); atol = 1e-4))
 end
 
 @testset "Comparison plot" begin
@@ -98,8 +111,9 @@ end
         edges = 0.0:1.0:4.0
         save_comparison_plot(path, edges, Dict("bb" => [2.0, 1.0, 0.0, 0.0], "bi_pmt" => [0.5, 0.0, 0.1, 0.0]),
                              Dict("bb" => [0.1, 0.1, 0.0, 0.0], "bi_pmt" => [0.01, 0.0, 0.01, 0.0]),
-                             [3.0, 1.0, 0.0, 0.5], [1.0, 1.0, 0.0, 0.5], [0.5, 0.0, NaN, NaN],
-                             (2.0, 3.0), (0.0, 3.0), "Title", "Subtitle")
+                             [3.0, 1.0, 0.0, 0.5], [1.0, 0.8, 0.0, 0.4], [1.5, 1.2, 0.9, 0.9],
+                             [0.5, 12.0, NaN, NaN], (2.0, 3.0), (0.0, 3.0),
+                             ["χ²/ndf = 1.0 / 2 = 0.5", "p-value = 0.607"], "Title", "Subtitle")
         @test open(io -> read(io, 4), path) == UInt8[0x89, 0x50, 0x4e, 0x47]
         @test open(io -> String(read(io, 5)), joinpath(dir, "plot.pdf")) == "%PDF-"
     end

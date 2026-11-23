@@ -321,11 +321,23 @@ function live_time(run_times_path, data_runs, runs)
     return sum(times[r] for r in selected), selected
 end
 
-# Pearson chi2 with the expected Poisson variance plus MC statistical variance,
-# and the Baker-Cousins Poisson likelihood ratio; both in counts.
+# Poisson likelihood-ratio chi2 (Baker-Cousins) of one bin, with the MC
+# normalization of the bin profiled within its statistical uncertainty
+# (Barlow-Beeston lite, Conway 2011). Valid for small counts.
+function bin_chi2(n, mu, variance)
+    tau2 = variance / mu^2
+    beta = tau2 > 0 ? ((1 - mu * tau2) + sqrt((mu * tau2 - 1)^2 + 4n * tau2)) / 2 : 1.0
+    m = beta * mu
+    deviance = 2 * (m - n + (n > 0 ? n * log(n / m) : 0.0))
+    return deviance + (tau2 > 0 ? (beta - 1)^2 / tau2 : 0.0)
+end
+
+# chi2 sums bin_chi2 over bins with mu > 0 (nothing is fitted, so ndf is the
+# number of bins). Pearson's chi2 is kept for reference; it is unreliable when
+# bins expect much less than one event.
 function chi2_test(data_counts, model_counts, model_variance, mask)
+    chi2 = 0.0
     pearson = 0.0
-    poisson = 0.0
     ndf = 0
     unpredicted = 0
     for i in eachindex(data_counts)
@@ -336,16 +348,24 @@ function chi2_test(data_counts, model_counts, model_variance, mask)
             continue
         end
         ndf += 1
+        chi2 += bin_chi2(n, mu, model_variance[i])
         pearson += (n - mu)^2 / (mu + model_variance[i])
-        poisson += 2 * (mu - n + (n > 0 ? n * log(n / mu) : 0.0))
     end
-    return (chi2 = pearson, ndf = ndf, p_value = ndf > 0 ? ccdf(Chisq(ndf), pearson) : NaN,
-            chi2_poisson = poisson, unpredicted_bins = unpredicted)
+    return (chi2 = chi2, ndf = ndf, p_value = ndf > 0 ? ccdf(Chisq(ndf), chi2) : NaN,
+            chi2_pearson = pearson, unpredicted_bins = unpredicted)
 end
 
+# Signed sqrt of each bin's chi2 contribution; their squares sum to chi2.
 function residuals(data_counts, model_counts, model_variance)
-    return [mu > 0 ? (n - mu) / sqrt(mu + v) : NaN
+    return [mu > 0 ? sign(n - mu) * sqrt(max(bin_chi2(n, mu, v), 0.0)) : NaN
             for (n, mu, v) in zip(data_counts, model_counts, model_variance)]
+end
+
+# Central 68.27% Poisson (Garwood) interval for n observed events.
+function poisson_interval(n)
+    alpha = (1 - 0.6826894921370859) / 2
+    lo = n == 0 ? 0.0 : quantile(Chisq(2n), alpha) / 2
+    return lo, quantile(Chisq(2n + 2), 1 - alpha) / 2
 end
 
 function step_band(edges, lower, upper)
@@ -366,8 +386,13 @@ function format_power(x)
     return "$(round(x / 10.0^exponent; digits = 2))×10$superscript"
 end
 
-function save_comparison_plot(path, edges, spectra, variances, data_rate, data_error, pulls,
-                              energy_roi, chi2_range, title, subtitle)
+const SIMULATION_COLOR = "#E3000F"
+# ²¹⁴Bi (foil) is red-orange in the background report; keep red for the total.
+const COMPARISON_STYLES = merge(BACKGROUND_STYLES, Dict("bi_foil" => ("²¹⁴Bi (foil)", "#E69F00", :solid)))
+
+# data_low/data_high: lower and upper data errors (distances from data_rate).
+function save_comparison_plot(path, edges, spectra, variances, data_rate, data_low, data_high,
+                              pulls, energy_roi, chi2_range, stats_labels, title, subtitle)
     ink = "#172333"
     roi_color = "#6686AD"
     fig = CairoMakie.Figure(size = (1180, 820), fontsize = 19, figure_padding = 24)
@@ -383,7 +408,7 @@ function save_comparison_plot(path, edges, spectra, variances, data_rate, data_e
     )
     pull_ax = CairoMakie.Axis(
         fig[2, 1];
-        xlabel = "Electron energy sum, E₁ + E₂ (MeV)", ylabel = "(Data − Sim.) / σ",
+        xlabel = "Electron energy sum, E₁ + E₂ (MeV)", ylabel = "Residual (σ)",
         xticks = 0:0.5:last(edges), xgridvisible = false, ygridcolor = "#E1E6EC",
         topspinevisible = false, rightspinevisible = false,
     )
@@ -395,7 +420,7 @@ function save_comparison_plot(path, edges, spectra, variances, data_rate, data_e
     total_error = sqrt.(sum(values(variances)))
     positive = filter(>(0), [total; data_rate])
     ymin = isempty(positive) ? 1e-5 : minimum(positive) / 5
-    ymax = isempty(positive) ? 1.0 : 3 * maximum([total .+ total_error; data_rate .+ data_error])
+    ymax = isempty(positive) ? 1.0 : 3 * maximum([total .+ total_error; data_rate .+ data_high])
     baseline = ymin / 2
     centers = (edges[1:end-1] .+ edges[2:end]) ./ 2
 
@@ -409,19 +434,19 @@ function save_comparison_plot(path, edges, spectra, variances, data_rate, data_e
     names = sort!(collect(keys(spectra)); by = name -> (-sum(spectra[name]), name))
     fallback_colors = CairoMakie.resample_cmap(:Dark2_8, max(2, length(names)))
     components = map(enumerate(names)) do (i, name)
-        label, color, style = get(BACKGROUND_STYLES, name, (name, fallback_colors[i], :dot))
+        label, color, style = get(COMPARISON_STYLES, name, (name, fallback_colors[i], :dot))
         x, y = spectrum_steps(edges, spectra[name], baseline)
         line = CairoMakie.stairs!(ax, x, y; step = :post, color, linestyle = style, linewidth = 1.8)
         (line, label)
     end
     band_x, band_lo, band_hi = step_band(edges, max.(baseline, total .- total_error), max.(baseline, total .+ total_error))
-    total_band = CairoMakie.band!(ax, band_x, band_lo, band_hi; color = (ink, 0.18))
+    total_band = CairoMakie.band!(ax, band_x, band_lo, band_hi; color = (SIMULATION_COLOR, 0.22))
     x, y = spectrum_steps(edges, total, baseline)
-    total_line = CairoMakie.stairs!(ax, x, y; step = :post, color = ink, linewidth = 3)
+    total_line = CairoMakie.stairs!(ax, x, y; step = :post, color = SIMULATION_COLOR, linewidth = 3)
 
     shown = data_rate .> 0
-    lower = min.(data_error[shown], data_rate[shown] .- baseline)
-    CairoMakie.errorbars!(ax, centers[shown], data_rate[shown], lower, data_error[shown];
+    lower = min.(data_low[shown], data_rate[shown] .- baseline)
+    CairoMakie.errorbars!(ax, centers[shown], data_rate[shown], lower, data_high[shown];
                           color = :black, whiskerwidth = 0, linewidth = 1.4)
     data_points = CairoMakie.scatter!(ax, centers[shown], data_rate[shown]; color = :black, markersize = 8)
     CairoMakie.xlims!(ax, first(edges), last(edges))
@@ -444,8 +469,9 @@ function save_comparison_plot(path, edges, spectra, variances, data_rate, data_e
 
     CairoMakie.Legend(
         fig[1:2, 2],
-        [data_points, [total_band, total_line], roi_band, first.(components)...],
-        ["Data", "Total simulation (±1σ MC stat.)", "Energy ROI", last.(components)...];
+        [data_points, [total_band, total_line], roi_band, first.(components)...,
+         (CairoMakie.MarkerElement(marker = :circle, color = :transparent) for _ in stats_labels)...],
+        ["Data", "Total simulation (±1σ MC stat.)", "Energy ROI", last.(components)..., stats_labels...];
         framevisible = false, valign = :center, patchsize = (30, 14), labelsize = 16,
     )
     CairoMakie.save(path, fig; px_per_unit = 3)
@@ -529,10 +555,13 @@ function run_comparison(config, settings)
     pulls = residuals(data_counts, model_counts, model_variance)
 
     data_rate = data_counts ./ live_days
-    data_error = sqrt.(data_counts) ./ live_days
+    intervals = poisson_interval.(data_counts)
+    data_low = (data_counts .- first.(intervals)) ./ live_days
+    data_high = (last.(intervals) .- data_counts) ./ live_days
     bins = DataFrame(
         energy_lo = edges[1:end-1], energy_hi = edges[2:end],
-        data_events = data_counts, data_rate_per_day = data_rate, data_rate_error = data_error,
+        data_events = data_counts, data_rate_per_day = data_rate,
+        data_rate_error_low = data_low, data_rate_error_high = data_high,
         sim_rate_per_day = mc_rate, sim_rate_error = sqrt.(mc_variance),
         residual = pulls, in_chi2 = chi2_mask,
     )
@@ -543,12 +572,12 @@ function run_comparison(config, settings)
         quantity = ["phase", "signal", "best_sensitivity_yr", "best_bkg", "best_eff",
                     "runs", "first_run", "last_run", "live_time_s", "live_time_days",
                     "chi2_range_mev", "chi2", "ndf", "chi2_per_ndf", "p_value",
-                    "chi2_poisson", "chi2_poisson_per_ndf", "excluded_bins_without_simulation"],
+                    "chi2_pearson", "chi2_pearson_per_ndf", "excluded_bins_without_simulation"],
         value = string.([settings.phase, settings.signal_name, results.sensitivity, results.bkg,
                          results.eff, length(runs), first(runs), last(runs), live_seconds, live_days,
                          "$(config.chi2_range[1])-$(config.chi2_range[2])", test.chi2, test.ndf,
-                         test.chi2 / test.ndf, test.p_value, test.chi2_poisson,
-                         test.chi2_poisson / test.ndf, test.unpredicted_bins]),
+                         test.chi2 / test.ndf, test.p_value, test.chi2_pearson,
+                         test.chi2_pearson / test.ndf, test.unpredicted_bins]),
     )
 
     mkpath(config.output_dir)
@@ -558,13 +587,16 @@ function run_comparison(config, settings)
 
     phase_label = replace(settings.phase, "phase_" => "Phase ")
     roi_lo, roi_hi = round.(energy_roi; digits = 3)
-    chi2_label = "χ²/ndf = $(round(test.chi2; digits = 1))/$(test.ndf)"
+    stats_labels = [
+        "χ²/ndf = $(round(test.chi2; digits = 1)) / $(test.ndf) = $(round(test.chi2 / test.ndf; digits = 2))",
+        "p-value = " * (test.p_value < 1e-3 ? format_power(test.p_value) : string(round(test.p_value; digits = 3))),
+    ]
     subtitle = "$phase_label · Runs $(first(runs))–$(last(runs)) ($(length(runs)) runs, " *
-               "$(round(live_days; digits = 2)) d) · $chi2_label · Energy ROI: $(roi_lo)–$roi_hi MeV · " *
+               "$(round(live_days; digits = 2)) d) · Energy ROI: $(roi_lo)–$roi_hi MeV · " *
                "T½ > $(format_power(results.sensitivity)) yr ($(settings.signal_name))"
     plot_path = joinpath(config.output_dir, "data_vs_simulation.png")
-    save_comparison_plot(plot_path, edges, spectra, variances, data_rate, data_error, pulls,
-                         energy_roi, config.chi2_range,
+    save_comparison_plot(plot_path, edges, spectra, variances, data_rate, data_low, data_high,
+                         pulls, energy_roi, config.chi2_range, stats_labels,
                          "SuperNEMO | Data vs simulation", subtitle)
 
     println("\n===== DATA VS SIMULATION (COUNTS / DAY) =====")
