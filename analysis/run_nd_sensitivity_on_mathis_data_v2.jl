@@ -50,10 +50,18 @@ function read_bad_oms(path)
     return bad
 end
 
-haskey(om_list_files, phase) || error("No OM list configured for $phase")
-om_list_path = joinpath(PROJECT_DIR, "data", "om_lists", om_list_files[phase])
-bad_oms = read_bad_oms(om_list_path)
-@info "Loaded $(length(bad_oms)) bad OMs for $phase from $om_list_path"
+# With use_bad_om_list = false the OM cut keeps only the two-OM and main-wall
+# requirements. Older configurations without the setting use the list.
+isdefined(Main, :use_bad_om_list) || (global use_bad_om_list = true)
+if use_bad_om_list
+    haskey(om_list_files, phase) || error("No OM list configured for $phase")
+    om_list_path = joinpath(PROJECT_DIR, "data", "om_lists", om_list_files[phase])
+    bad_oms = read_bad_oms(om_list_path)
+    @info "Loaded $(length(bad_oms)) bad OMs for $phase from $om_list_path"
+else
+    bad_oms = Set{Int}()
+    @info "Bad OM list disabled; events in listed OMs are kept"
+end
 
 # Only load the selected signal and backgrounds for this phase.
 selected_files = @chain data_info begin

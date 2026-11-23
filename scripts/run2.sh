@@ -1,22 +1,36 @@
 #!/usr/bin/env bash
 
 # Prepare one reproducible run and submit it to SLURM.
-# Usage: bash scripts/run2.sh CONFIG [--dry-run]
+# Usage: bash scripts/run2.sh CONFIG [--dry-run] [--use_data_validation=true|false]
+# With --use_data_validation=true the job compares the result with measured
+# data (scripts/compare_data_simulation.jl) after the analysis.
 set -euo pipefail
 
-if [[ $# -lt 1 || $# -gt 2 || (${2:-} != "" && ${2:-} != "--dry-run") ]]; then
-    echo "Usage: bash $0 CONFIG [--dry-run]" >&2
+usage() {
+    echo "Usage: bash $0 CONFIG [--dry-run] [--use_data_validation=true|false]" >&2
     exit 2
-fi
-
+}
+(( $# >= 1 )) || usage
 config=$1
-dry_run=${2:-}
+shift
+dry_run=""
+use_data_validation=false
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) dry_run=--dry-run ;;
+        --use_data_validation=true|--use_data_validation=false) use_data_validation=${arg#*=} ;;
+        *) usage ;;
+    esac
+done
 [[ -f "$config" ]] || { echo "Configuration not found: $config" >&2; exit 1; }
 config_dir=$(cd "$(dirname "$config")" && pwd -P)
 config="$config_dir/$(basename "$config")"
 project_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 template="$project_dir/analysis/run_nd_sensitivity_on_mathis_data_v2.jl"
 [[ -f "$template" ]] || { echo "Julia template not found: $template" >&2; exit 1; }
+validation_script="$project_dir/scripts/compare_data_simulation.jl"
+[[ "$use_data_validation" == false || -f "$validation_script" ]] ||
+    { echo "Data validation script not found: $validation_script" >&2; exit 1; }
 
 # RUN_ settings are comments, not shell code. The Julia section is executable
 # Julia code, so only use configuration files you trust.
@@ -185,9 +199,17 @@ BASH
     if [[ -n "$sysimage" ]]; then
         julia_cmd+=(-J "$sysimage")
     fi
-    printf 'exec '
-    printf '%q ' "${julia_cmd[@]}"
-    printf '%q\n' "$run_dir/analysis.jl"
+    if [[ "$use_data_validation" == true ]]; then
+        printf '%q ' "${julia_cmd[@]}"
+        printf '%q\n' "$run_dir/analysis.jl"
+        printf 'exec '
+        printf '%q ' "${julia_cmd[@]}"
+        printf '%q %q\n' "$validation_script" "--results=$run_dir/results.csv"
+    else
+        printf 'exec '
+        printf '%q ' "${julia_cmd[@]}"
+        printf '%q\n' "$run_dir/analysis.jl"
+    fi
 } >> "$run_dir/job.sh"
 
 sbatch_args=(

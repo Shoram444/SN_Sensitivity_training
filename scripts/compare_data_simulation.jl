@@ -154,6 +154,7 @@ function load_settings(path)
         use_kinks_cut = get_setting(:use_kinks_cut),
         use_om_cut = get_setting(:use_om_cut),
         use_vertex_region_cut = get_setting(:use_vertex_region_cut),
+        use_bad_om_list = isdefined(m, :use_bad_om_list) ? getfield(m, :use_bad_om_list) : true,
         nd_numeric_cuts = get_setting(:nd_numeric_cuts),
     )
 end
@@ -451,6 +452,9 @@ function save_comparison_plot(path, edges, spectra, variances, data_rate, data_l
     data_points = CairoMakie.scatter!(ax, centers[shown], data_rate[shown]; color = :black, markersize = 8)
     CairoMakie.xlims!(ax, first(edges), last(edges))
     CairoMakie.ylims!(ax, ymin, ymax)
+    # Whole decades only; the automatic log ticks may fall on half decades.
+    decades = ceil(Int, log10(ymin)):floor(Int, log10(ymax))
+    ax.yticks = (10.0 .^ decades, [CairoMakie.rich("10", CairoMakie.superscript(string(d))) for d in decades])
 
     finite = isfinite.(pulls)
     limit = clamp(1.15 * maximum(abs, pulls[finite]; init = 0.0), 3.0, 10.0)
@@ -482,8 +486,14 @@ function run_comparison(config, settings)
     results = read_results(config.results)
     results.phase == settings.phase ||
         error("Phase in $(config.results) ($(results.phase)) differs from settings.jl ($(settings.phase))")
-    haskey(OM_LIST_FILES, settings.phase) || error("No OM list configured for $(settings.phase)")
-    bad_oms = read_bad_oms(joinpath(PROJECT_DIR, "data", "om_lists", OM_LIST_FILES[settings.phase]))
+    # The bad OM list follows the run's setting, for simulations and data alike.
+    bad_oms = if settings.use_bad_om_list
+        haskey(OM_LIST_FILES, settings.phase) || error("No OM list configured for $(settings.phase)")
+        read_bad_oms(joinpath(PROJECT_DIR, "data", "om_lists", OM_LIST_FILES[settings.phase]))
+    else
+        Set{Int}()
+    end
+    @info "Bad OM list" settings.use_bad_om_list length(bad_oms)
     sel = build_selection(settings, results.roi, bad_oms)
     edges = config.edges
     energy_roi = results.roi.energy_elec_sum

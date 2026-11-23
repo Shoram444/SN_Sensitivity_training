@@ -28,7 +28,15 @@ bash scripts/run2.sh configs/nd_sensitivity.example.conf --dry-run
 
 # Create a separate run directory and submit it.
 bash scripts/run2.sh configs/nd_sensitivity.example.conf
+
+# Also compare the result with measured data after the analysis.
+bash scripts/run2.sh configs/nd_sensitivity.example.conf --use_data_validation=true
 ```
+
+With `--use_data_validation=true`, `job.sh` runs
+[`compare_data_simulation.jl`](compare_data_simulation.jl) on the new
+`results.csv` after a successful analysis, with its default data and run-time
+files (see "Data vs simulation"); its outputs go to the run directory.
 
 Use the path to your edited configuration in place of the example. The script
 prints the run directory and, on submission, the SLURM job ID. Use `squeue -j
@@ -93,8 +101,11 @@ use only trusted configuration files.
   longer to allow for data loading and final result calculation.
 - `var_bounds_nd` and `var_steps_nd` define the search grid. `initial_roi`
   defines one starting ROI; its edges must be inside the bounds and on the grid.
-- Switch the topological cuts with the `use_..._cut` booleans. The OM list is
-  still loaded at startup even when `use_om_cut` is false.
+- Switch the topological cuts with the `use_..._cut` booleans.
+  `use_bad_om_list = false` keeps events in OMs from the phase's bad OM list;
+  the OM cut then only requires two main-wall OMs (default `true`, also for
+  older configurations without the setting). The list is loaded at startup
+  whenever it is used. The data comparison follows the same setting.
 - In `nd_numeric_cuts`, `mode = :fixed` applies the configured comparison and
   `fixed` threshold before optimization. `mode = :optimize` searches the
   threshold over `bounds` and `step`; `fixed` becomes its initial value and

@@ -7,9 +7,10 @@ tmp=$(mktemp -d "${TMPDIR:-/tmp}/nd-run2-test.XXXXXX")
 tmp=$(cd "$tmp" && pwd -P)
 run1=""
 run2=""
+run3=""
 cleanup() {
     local dir
-    for dir in "$run1" "$run2"; do
+    for dir in "$run1" "$run2" "$run3"; do
         if [[ -n "$dir" && "$dir" == "$tmp/runs/"* ]]; then
             rm -f "$dir/config.conf" "$dir/settings.jl" "$dir/analysis.jl" "$dir/auxiliary.jl" "$dir/job.sh" "$dir/job_id.txt"
             rmdir "$dir"
@@ -58,6 +59,18 @@ grep -Fq 'include(joinpath(@__DIR__, "auxiliary.jl"))' "$run2/analysis.jl"
 bash -n "$run2/job.sh"
 [[ $(grep -c 'julia --project=' "$run2/job.sh") == 1 ]]
 [[ $(tail -n 1 "$run2/job.sh") == "exec julia "*analysis.jl ]]
+
+output=$(bash "$project_dir/scripts/run2.sh" "$tmp/example.conf" --use_data_validation=true --dry-run)
+run3=${output%%$'\n'*}
+run3=${run3#Run directory: }
+bash -n "$run3/job.sh"
+[[ $(grep -c 'julia --project=' "$run3/job.sh") == 2 ]]
+[[ $(tail -n 2 "$run3/job.sh" | head -n 1) == "julia "*analysis.jl ]]
+[[ $(tail -n 1 "$run3/job.sh") == "exec julia "*"scripts/compare_data_simulation.jl --results=$run3/results.csv" ]]
+if bash "$project_dir/scripts/run2.sh" "$tmp/example.conf" --use_data_validation=yes --dry-run >/dev/null 2>&1; then
+    echo "Invalid data validation flag was accepted" >&2
+    exit 1
+fi
 
 sed 's/^# RUN_CPUS=.*/# RUN_CPUS=0/' "$tmp/example.conf" > "$tmp/bad.conf"
 if bash "$project_dir/scripts/run2.sh" "$tmp/bad.conf" --dry-run >/dev/null 2>&1; then
