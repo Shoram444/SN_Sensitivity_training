@@ -23,3 +23,5 @@ Job42.cpp
 /data/mathis_files_reduced
 *.root.part
 /scripts/out/
+
+.DS_Store
