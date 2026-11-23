@@ -587,10 +587,7 @@ function run_comparison(config, settings)
 
     phase_label = replace(settings.phase, "phase_" => "Phase ")
     roi_lo, roi_hi = round.(energy_roi; digits = 3)
-    stats_labels = [
-        "χ²/ndf = $(round(test.chi2; digits = 1)) / $(test.ndf) = $(round(test.chi2 / test.ndf; digits = 2))",
-        "p-value = " * (test.p_value < 1e-3 ? format_power(test.p_value) : string(round(test.p_value; digits = 3))),
-    ]
+    stats_labels = ["χ²/ndf = $(round(test.chi2; digits = 1)) / $(test.ndf) = $(round(test.chi2 / test.ndf; digits = 2))"]
     subtitle = "$phase_label · Runs $(first(runs))–$(last(runs)) ($(length(runs)) runs, " *
                "$(round(live_days; digits = 2)) d) · Energy ROI: $(roi_lo)–$roi_hi MeV · " *
                "T½ > $(format_power(results.sensitivity)) yr ($(settings.signal_name))"

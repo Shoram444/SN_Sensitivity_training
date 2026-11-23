@@ -197,7 +197,7 @@ Outputs:
 
 - `data_vs_simulation.png`/`.pdf`: simulated components (PMTs grouped), total
   simulation (red) with ±1σ MC statistical band, and data (black) with central
-  68% Poisson (Garwood) intervals. The legend shows χ²/ndf and the p-value;
+  68% Poisson (Garwood) intervals. The legend shows χ²/ndf;
   below, each bin's residual `sign(n − μ) · sqrt(χ²_bin)`, whose squares sum
   to χ². Bins outside the χ² range are faded; residuals beyond the axis are
   drawn as triangles.

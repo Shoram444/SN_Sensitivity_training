@@ -113,7 +113,7 @@ end
                              Dict("bb" => [0.1, 0.1, 0.0, 0.0], "bi_pmt" => [0.01, 0.0, 0.01, 0.0]),
                              [3.0, 1.0, 0.0, 0.5], [1.0, 0.8, 0.0, 0.4], [1.5, 1.2, 0.9, 0.9],
                              [0.5, 12.0, NaN, NaN], (2.0, 3.0), (0.0, 3.0),
-                             ["χ²/ndf = 1.0 / 2 = 0.5", "p-value = 0.607"], "Title", "Subtitle")
+                             ["χ²/ndf = 1.0 / 2 = 0.5"], "Title", "Subtitle")
         @test open(io -> read(io, 4), path) == UInt8[0x89, 0x50, 0x4e, 0x47]
         @test open(io -> String(read(io, 5)), joinpath(dir, "plot.pdf")) == "%PDF-"
     end
