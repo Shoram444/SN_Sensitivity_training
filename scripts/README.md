@@ -221,3 +221,30 @@ reproduce `best_bkg` in `results.csv`, e.g. after metadata changes.
 ```bash
 julia --project=. tests/test_compare_data_simulation.jl
 ```
+
+## Sensitivity versus time
+
+```bash
+julia --project=. scripts/sensitivity_vs_time.jl \
+    results/nd_runs/<M1 run>/results.csv results/nd_runs/<M2 run>/results.csv \
+    --combined=results/nd_runs/sensitivity_vs_time_M1_M2.png
+```
+
+For each `results.csv`, the 90% CL half-life sensitivity of its best ROI is
+computed versus measurement time (up to `--max-time`, 5 yr by default) with
+`get_tHalf` and the Feldman–Cousins table, as in the optimization. The signal
+efficiency `best_eff` is constant and `best_bkg`, counted over
+`SNparams["tYear"]`, scales linearly with time. The signal and α are read from
+`settings.jl` next to the results. At `tYear` the curve reproduces
+`best_sensitivity` (a warning is printed otherwise).
+
+Each run directory receives `sensitivity_vs_time.png`/`.pdf` and a CSV with
+time, exposure, background and sensitivity; `--combined` draws all given
+signals in one figure. Reference limits are CUPID-0 (Phys. Rev. D 107, 032006).
+The package uses the table only for backgrounds below 329 counts and
+`α·sqrt(b)` above, which causes a small step in curves crossing that value.
+
+```bash
+julia --project=. tests/test_sensitivity_vs_time.jl
+```
+

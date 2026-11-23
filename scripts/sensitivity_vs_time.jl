@@ -8,8 +8,9 @@
 # Each run directory gets sensitivity_vs_time.{png,pdf,csv}; --combined also
 # draws all signals in one figure.
 
-using CSV, DataFramesMeta, CairoMakie, LaTeXStrings
+using CSV, DataFramesMeta, CairoMakie
 using SNSensitivityEstimate: SNparams, get_tHalf
+using CairoMakie.Makie: latexstring
 
 const PROJECT_DIR = dirname(@__DIR__)
 
@@ -36,7 +37,7 @@ function read_run(results_path)
     settings_path = joinpath(dirname(results_path), "settings.jl")
     text = read(settings_path, String)
     row = only(eachrow(results))
-    return (dir = dirname(results_path), signal = setting(text, "signal_name", settings_path),
+    return (dir = dirname(results_path), signal = String(setting(text, "signal_name", settings_path)),
             α = parse(Float64, setting(text, "α", settings_path)), phase = row.phase,
             efficiency = row.best_eff, background = row.best_bkg, sensitivity = row.best_sensitivity)
 end
@@ -59,7 +60,8 @@ function sensitivity_table(run, times)
     )
 end
 
-style(signal) = get(SIGNALS, signal, (label = latexstring("\\mathrm{", signal, "}"), color = "#333333", reference = nothing))
+style(signal) = get(() -> (label = latexstring("\\mathrm{", signal, "}"), color = "#333333", reference = nothing),
+                    SIGNALS, signal)
 
 function plot_sensitivity(path, runs, tables, max_time)
     mass = SNparams["foilMass"]
@@ -71,7 +73,7 @@ function plot_sensitivity(path, runs, tables, max_time)
             yscale = log10, yminorticksvisible = true, yminorticks = IntervalsBetween(9),
             xminorticksvisible = true, xgridvisible = false, ygridcolor = (:black, 0.08),
             yminorgridvisible = false)
-        top = Axis(fig[1, 1]; xaxisposition = :top, xlabel = L"Measurement time (yr)",
+        top = Axis(fig[1, 1]; xaxisposition = :top, xlabel = "Measurement time (yr)",
             xminorticksvisible = true)
         hidespines!(top); hideydecorations!(top); hidexdecorations!(top; label = false, ticklabels = false, ticks = false, minorticks = false)
         xlims!(ax, 0, mass * max_time); xlims!(top, 0, max_time)
@@ -80,6 +82,7 @@ function plot_sensitivity(path, runs, tables, max_time)
         references = [style(r.signal).reference for r in runs]
         append!(values, [ref[1] for ref in references if ref !== nothing])
         ylo, yhi = 10.0^floor(log10(minimum(values) / 1.5)), 10.0^ceil(log10(maximum(values) * 1.5))
+        yhi / ylo < 100 && (ylo /= 10) # at least two decades, so ticks fall on powers of ten
         ylims!(ax, ylo, yhi)
 
         for exposure in EXPOSURE_MARKS
@@ -110,7 +113,7 @@ function plot_sensitivity(path, runs, tables, max_time)
 
         phase = replace(first(runs).phase, "phase_" => "Phase ")
         Label(fig[0, 1], L"SuperNEMO $^{82}$Se sensitivity"; fontsize = 26, halign = :left, tellwidth = false)
-        Label(fig[0, 1], latexstring("\\mathrm{ND\\ ROI,\\ ", phase, "\\ background\\ model,\\ Feldman\\text{-}Cousins}");
+        Label(fig[0, 1], "ND ROI · $phase background model · Feldman–Cousins";
               fontsize = 17, halign = :right, valign = :bottom, color = :gray35, tellwidth = false)
         save(path, fig; px_per_unit = 4)
         save(splitext(path)[1] * ".pdf", fig)
@@ -146,4 +149,6 @@ function main(args)
     end
 end
 
-abspath(PROGRAM_FILE) == @__FILE__ && main(ARGS)
+if abspath(PROGRAM_FILE) == @__FILE__
+    main(ARGS)
+end
