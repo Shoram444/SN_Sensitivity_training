@@ -1,0 +1,27 @@
+**********************************************************************
+*                         SLURM Batch System                         *
+*              IN2P3 Computing Centre, Villeurbanne FR               *
+**********************************************************************
+* Date:                 Mon Nov 23 09:36:23 AM CET 2026
+* Job name:             M2_basic
+* Job id:               64626846
+* User:                 mpetro
+* Account:              nemo
+* Submit host:          cca015
+* Partition:            htc
+* Quality of service:   normal
+* Nodelist:             ccwslurm0144
+* Operating System:     Red Hat Enterprise Linux release 9.8 (Plow)
+* Architecture:         x86_64
+**********************************************************************
+****************************************************************
+*                      SLURM Batch System                      *
+*           IN2P3 Computing Centre, Villeurbanne FR            *
+****************************************************************
+Date: Mon Nov 23 09:41:51 AM CET 2026
+Job informations can be found using these commands:
+Accounting:
+sacct -j 64626846
+Efficiency:
+seff 64626846
+****************************************************************

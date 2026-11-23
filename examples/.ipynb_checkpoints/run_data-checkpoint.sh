@@ -15,7 +15,7 @@
 
 PROJECT_DIR=/sps/nemo/scratch/mpetro/Sensitivity_training/ # path to where Project.toml file is located (Project.toml file contains all the dependencies for the project)
 SCRIPT=/sps/nemo/scratch/mpetro/Sensitivity_training/scripts/compare_data_simulation.jl # example run script
-RESULTS_DIR=/sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_var_20261120_164307_0vbPEg
+RESULTS_DIR=/sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_basic_20261123_100524_wHkw9Y
 
 export JULIA_NUM_THREADS=6 # selec number of threads to use, some tasks can run in parallel so that's good
 export JULIA_CPU_TARGET="generic"

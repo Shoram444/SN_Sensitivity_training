@@ -1,0 +1,40 @@
+**********************************************************************
+*                         SLURM Batch System                         *
+*              IN2P3 Computing Centre, Villeurbanne FR               *
+**********************************************************************
+* Date:                 Mon Nov 23 09:36:45 AM CET 2026
+* Job name:             M2_var
+* Job id:               64626852
+* User:                 mpetro
+* Account:              nemo
+* Submit host:          cca015
+* Partition:            htc
+* Quality of service:   normal
+* Nodelist:             ccwslurm0144
+* Operating System:     Red Hat Enterprise Linux release 9.8 (Plow)
+* Architecture:         x86_64
+**********************************************************************
+creating process: bb
+creating process: bb0nuM2
+creating process: bi_5_pmt
+creating process: bi_foil
+creating process: bi_g_pmt
+creating process: bi_pmt
+creating process: bi_x_pmt
+creating process: k
+creating process: k_5_pmt
+creating process: k_g_pmt
+creating process: k_pmt
+creating process: k_x_pmt
+creating process: pa
+creating process: radon
+creating process: radon_surface
+creating process: tl
+creating process: tl_5_pmt
+creating process: tl_g_pmt
+creating process: tl_pmt
+creating process: tl_x_pmt
+creating process: bb0nuM2
+creating process: bb0nuM2
+creating process: bb0nuM2
+creating process: bb0nuM2

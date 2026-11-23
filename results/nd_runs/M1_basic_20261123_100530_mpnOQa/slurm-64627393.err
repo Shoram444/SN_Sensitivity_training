@@ -1,0 +1,21 @@
+WARNING: Method definition deepcopy(Observables.Observable{T} where T) in module MakieCore at /pbs/home/m/mpetro/sps_mpetro/PROGRAMS/.julia_sym/packages/MakieCore/dw3iH/src/attributes.jl:48 overwritten in module Makie at /pbs/home/m/mpetro/.julia/packages/Makie/WKgwk/src/attributes.jl:51.
+ERROR: Method overwriting is not permitted during Module precompilation. Use `__precompile__(false)` to opt-out of precompilation.
+WARNING: Method definition deepcopy(Observables.Observable{T} where T) in module MakieCore at /pbs/home/m/mpetro/sps_mpetro/PROGRAMS/.julia_sym/packages/MakieCore/dw3iH/src/attributes.jl:48 overwritten in module Makie at /pbs/home/m/mpetro/.julia/packages/Makie/WKgwk/src/attributes.jl:51.
+ERROR: Method overwriting is not permitted during Module precompilation. Use `__precompile__(false)` to opt-out of precompilation.
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0005-86348ddc6f20 is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0005-86348ddc6f20 is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0005-86348ddc6f20 is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+[ Info: Running sensitivity optimization for phase: phase_4, with signal: bb0nuM1, output will be saved to: /sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M1_basic_20261123_100530_mpnOQa/results.csv
+[ Info: Packages loaded, loading data...
+[ Info: Loaded 396 bad OMs for phase_4 from /sps/nemo/scratch/mpetro/Sensitivity_training/data/om_lists/list_om_phase_3.txt
+[ Info: Data loaded and filtered, applying Mathis's extra cuts...
+[ Info: Mathis's extra cuts applied, creating ND processes...
+[ Info: Defining the optimization problem...
+[ Info: Starting optimization with PSO algorithm...
+[ Info: Optimization finished, processing results...
