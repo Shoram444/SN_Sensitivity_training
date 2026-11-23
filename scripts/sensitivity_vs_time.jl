@@ -22,7 +22,9 @@ const SIGNALS = Dict(
     "bb0nuM2" => (label = L"0\nu\beta\beta\chi^0\chi^0", color = "#D55E00",
                   reference = (1.4e22, L"CUPID-0, $0\nu\beta\beta\chi^0\chi^0$")),
 )
-const EXPOSURE_MARKS = (6.25, 17.5) # kg·yr
+const MARK_TIMES = (1.0, SNparams["tYear"]) # yr; drawn as exposure marks
+# Exposure counts the ⁸²Se mass: foil mass × enrichment (6.25 kg × 0.9776 = 6.11 kg).
+const SE82_MASS = SNparams["foilMass"] * SNparams["a"]
 
 # Scalar settings (signal, α) are read from settings.jl next to results.csv.
 function setting(settings_text, name, path)
@@ -54,7 +56,7 @@ function sensitivity_table(run, times)
         @warn "Sensitivity at tYear differs from best_sensitivity" run.dir nominal run.sensitivity
     return DataFrame(
         time_yr = times,
-        exposure_kg_yr = SNparams["foilMass"] .* times,
+        exposure_kg_yr = SE82_MASS .* times,
         background_counts = run.background .* times ./ SNparams["tYear"],
         sensitivity_yr = [sensitivity(run, t) for t in times],
     )
@@ -64,12 +66,12 @@ style(signal) = get(() -> (label = latexstring("\\mathrm{", signal, "}"), color 
                     SIGNALS, signal)
 
 function plot_sensitivity(path, runs, tables, max_time)
-    mass = SNparams["foilMass"]
+    mass = SE82_MASS
     nominal_time = SNparams["tYear"]
     with_theme(theme_latexfonts()) do
         fig = Figure(size = (900, 600), fontsize = 22, figure_padding = (12, 24, 12, 12))
         ax = Axis(fig[1, 1];
-            xlabel = L"Exposure (kg$\,\cdot\,$yr)", ylabel = L"$T_{1/2}$ sensitivity at 90% CL (yr)",
+            xlabel = L"$^{82}$Se exposure (kg$\,\cdot\,$yr)", ylabel = L"$T_{1/2}$ sensitivity at 90% CL (yr)",
             yscale = log10, yminorticksvisible = true, yminorticks = IntervalsBetween(9),
             xminorticksvisible = true, xgridvisible = false, ygridcolor = (:black, 0.08),
             yminorgridvisible = false)
@@ -85,9 +87,9 @@ function plot_sensitivity(path, runs, tables, max_time)
         yhi / ylo < 100 && (ylo /= 10) # at least two decades, so ticks fall on powers of ten
         ylims!(ax, ylo, yhi)
 
-        for exposure in EXPOSURE_MARKS
+        for exposure in mass .* MARK_TIMES
             vlines!(ax, exposure; color = (:black, 0.35), linestyle = :dot, linewidth = 1.2)
-            text!(ax, exposure, ylo; text = latexstring(exposure, "\\,\\mathrm{kg\\cdot yr}"),
+            text!(ax, exposure, ylo; text = latexstring(round(exposure; sigdigits = 3), "\\,\\mathrm{kg\\cdot yr}"),
                   rotation = π / 2, align = (:left, :bottom), offset = (-4, 6), fontsize = 15,
                   color = (:black, 0.5))
         end

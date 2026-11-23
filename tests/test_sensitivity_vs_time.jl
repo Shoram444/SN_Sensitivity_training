@@ -13,7 +13,8 @@ include("../scripts/sensitivity_vs_time.jl")
 
         table = sensitivity_table(parsed, [0.5, SNparams["tYear"]])
         @test table.background_counts ≈ [400.0 * 0.5 / SNparams["tYear"], 400.0]
-        @test table.exposure_kg_yr ≈ SNparams["foilMass"] .* [0.5, SNparams["tYear"]]
+        @test table.exposure_kg_yr ≈ SNparams["foilMass"] * SNparams["a"] .* [0.5, SNparams["tYear"]]
+        @test table.exposure_kg_yr[2] ≈ 17.475 atol = 0.01
         @test table.sensitivity_yr[2] ≈ nominal
         @test table.sensitivity_yr[1] < nominal
     end

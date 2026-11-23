@@ -67,7 +67,8 @@ energy-sum preselection.
   bins. Vertical bars show ±1σ MC statistical uncertainty, clipped at the
   bottom of the axis where necessary. A vector copy is saved as
   `background_spectrum.pdf`. The subtitle shows the signal used to optimize
-  the ROI and the exposure in kg·yr (process live time × foil mass).
+  the ROI and the ⁸²Se exposure in kg·yr (process live time × foil mass ×
+  enrichment `a`, i.e. 6.11 kg of ⁸²Se).
 - `background_components.csv`: passing MC events and expected counts per
   background (plus a total) for the full best ROI and for
   `0 <= E_sum < 4 MeV` with only the energy-sum window replaced. The ROI total
@@ -234,7 +235,9 @@ For each `results.csv`, the 90% CL half-life sensitivity of its best ROI is
 computed versus measurement time (up to `--max-time`, 5 yr by default) with
 `get_tHalf` and the Feldman–Cousins table, as in the optimization. The signal
 efficiency `best_eff` is constant and `best_bkg`, counted over
-`SNparams["tYear"]`, scales linearly with time. The signal and α are read from
+`SNparams["tYear"]`, scales linearly with time. Exposure is the ⁸²Se mass (`foilMass × a` =
+6.11 kg) times the measurement time, so 2.86 yr correspond to 17.5 kg·yr;
+1 yr and `tYear` are marked. The signal and α are read from
 `settings.jl` next to the results. At `tYear` the curve reproduces
 `best_sensitivity` (a warning is printed otherwise).
 

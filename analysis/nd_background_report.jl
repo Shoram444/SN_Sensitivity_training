@@ -123,7 +123,8 @@ end
 function save_background_report(output_dir, phase, signal_process, files, tables, roi,
                                 energy_prefilter, edges, best_bkg)
     live_time = signal_process.timeMeas
-    exposure = SNparams["foilMass"] * live_time / (SNparams["t"] / SNparams["tYear"])
+    # ⁸²Se exposure: foil mass × enrichment × live time in years.
+    exposure = SNparams["foilMass"] * SNparams["a"] * live_time / (SNparams["t"] / SNparams["tYear"])
     spectra = Dict{String,Vector{Float64}}()
     variances = Dict{String,Vector{Float64}}()
     summary = DataFrame(

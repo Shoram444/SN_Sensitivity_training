@@ -1,6 +1,6 @@
 using Test, CSV, DataFramesMeta
 
-const SNparams = Dict("t" => 200.0, "tYear" => 2.0, "foilMass" => 6.25)
+const SNparams = Dict("t" => 200.0, "tYear" => 2.0, "foilMass" => 6.25, "a" => 0.9776)
 include("../analysis/nd_background_report.jl")
 
 @testset "Log spectrum steps close at zero bins and outer edges" begin
