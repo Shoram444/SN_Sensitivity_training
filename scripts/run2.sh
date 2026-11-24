@@ -107,6 +107,8 @@ sed -n '/^# BEGIN JULIA CONFIG$/,/^# END JULIA CONFIG$/{ /^# BEGIN JULIA CONFIG$
     "$run_dir/config.conf" > "$run_dir/settings.jl"
 if [[ "$use_dead_om_map" == true ]]; then
     printf '\n# Added by run2.sh --use_dead_om_map=true\nglobal use_dead_om_map = true\n' >> "$run_dir/settings.jl"
+    grep -Eq '^[[:space:]]*(global[[:space:]]+)?use_bad_om_list[[:space:]]*=[[:space:]]*false' "$run_dir/settings.jl" ||
+        echo "Warning: the static bad OM list is also active; set use_bad_om_list = false in the configuration to veto dead OMs only by the map" >&2
 fi
 
 # Insert background selection immediately after the signal lookup. This keeps

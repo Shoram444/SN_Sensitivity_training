@@ -74,6 +74,8 @@ if use_dead_om_map
     dead_om_intervals = read_dead_om_map(joinpath(PROJECT_DIR, DEAD_OM_MAP_FILE), joinpath(PROJECT_DIR, OM_GID_MAP_FILE))
     dead_om_live = data_live_time(joinpath(PROJECT_DIR, dead_om_data_file), joinpath(PROJECT_DIR, dead_om_run_times))
     @info "Dead OM map enabled" oms = length(dead_om_intervals) live_days = dead_om_live.total / 86400
+    use_bad_om_list && @warn "Both the static bad OM list and the dead OM map are active; " *
+        "set use_bad_om_list = false to veto dead OMs only by the map"
 end
 
 # Only load the selected signal and backgrounds for this phase.
