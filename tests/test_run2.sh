@@ -68,7 +68,7 @@ bash -n "$run3/job.sh"
 [[ $(grep -c 'julia --project=' "$run3/job.sh") == 2 ]]
 [[ $(tail -n 2 "$run3/job.sh" | head -n 1) == "julia "*analysis.jl ]]
 [[ $(tail -n 1 "$run3/job.sh") == "exec julia "*"scripts/compare_data_simulation.jl --results=$run3/results.csv" ]]
-! grep -q 'use_dead_om_map' "$run3/settings.jl"
+[[ $(grep -c 'use_dead_om_map' "$run3/settings.jl") == 1 ]]
 
 output=$(bash "$project_dir/scripts/run2.sh" "$tmp/example.conf" --dry-run --use_dead_om_map=true)
 run4=${output%%$'\n'*}

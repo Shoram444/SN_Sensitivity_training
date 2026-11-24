@@ -125,7 +125,9 @@ use only trusted configuration files.
 - Switch the topological cuts with the `use_..._cut` booleans.
   `use_bad_om_list = false` keeps events in OMs from the phase's bad OM list;
   the OM cut then only requires two main-wall OMs (default `true`, also for
-  older configurations without the setting). The list is loaded at startup
+  older configurations without the setting). `use_dead_om_map = true` vetoes
+  OMs only while they were dead (see `--use_dead_om_map` above); the
+  configurations in `configs/` use the map and turn the list off. The list is loaded at startup
   whenever it is used. The data comparison follows the same setting.
 - In `nd_numeric_cuts`, `mode = :fixed` applies the configured comparison and
   `fixed` threshold before optimization. `mode = :optimize` searches the
