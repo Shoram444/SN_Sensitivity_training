@@ -44,10 +44,31 @@ function read_bad_oms(path)
     return bad
 end
 
-haskey(om_list_files, phase) || error("No OM list configured for $phase")
-om_list_path = joinpath(PROJECT_DIR, "data", "om_lists", om_list_files[phase])
-bad_oms = read_bad_oms(om_list_path)
-@info "Loaded $(length(bad_oms)) bad OMs for $phase from $om_list_path"
+# With use_bad_om_list = false the OM cut keeps only the two-OM and main-wall
+# requirements. Older configurations without the setting use the list.
+isdefined(Main, :use_bad_om_list) || (global use_bad_om_list = true)
+if use_bad_om_list
+    haskey(om_list_files, phase) || error("No OM list configured for $phase")
+    om_list_path = joinpath(PROJECT_DIR, "data", "om_lists", om_list_files[phase])
+    bad_oms = read_bad_oms(om_list_path)
+    @info "Loaded $(length(bad_oms)) bad OMs for $phase from $om_list_path"
+else
+    bad_oms = Set{Int}()
+    @info "Bad OM list disabled; events in listed OMs are kept"
+end
+
+# Time-dependent dead OM map (analysis/dead_om_map.jl): simulated events get a
+# time drawn from the live time of the data and are vetoed if an electron OM
+# was dead then. Off unless use_dead_om_map = true.
+isdefined(Main, :use_dead_om_map) || (global use_dead_om_map = false)
+isdefined(Main, :dead_om_data_file) || (global dead_om_data_file = joinpath("data", "real_data", "run_3470-4427.root"))
+isdefined(Main, :dead_om_run_times) || (global dead_om_run_times = joinpath("data", "real_data", "run_times.csv"))
+if use_dead_om_map
+    include(joinpath(PROJECT_DIR, "analysis", "dead_om_map.jl"))
+    dead_om_intervals = read_dead_om_map(joinpath(PROJECT_DIR, DEAD_OM_MAP_FILE), joinpath(PROJECT_DIR, OM_GID_MAP_FILE))
+    dead_om_live = data_live_time(joinpath(PROJECT_DIR, dead_om_data_file), joinpath(PROJECT_DIR, dead_om_run_times))
+    @info "Dead OM map enabled" oms = length(dead_om_intervals) live_days = dead_om_live.total / 86400
+end
 
 # Only load the selected signal and backgrounds for this phase.
 selected_files = @chain data_info begin
@@ -59,8 +80,8 @@ signal_rows = findall(selected_files.is_signal .& (selected_files.name .== signa
 if background_names !== :all
     available = Set(String.(selected_files.name[.!selected_files.is_signal]))
     requested = Set(String.(background_names))
-    missing = setdiff(requested, available)
-    isempty(missing) || error("Unknown backgrounds for $phase: $missing")
+    unknown = setdiff(requested, available)
+    isempty(unknown) || error("Unknown backgrounds for $phase: $unknown")
     selected_files = selected_files[
         selected_files.is_signal .| in.(selected_files.name, Ref(requested)), :
     ]
@@ -212,7 +233,10 @@ for i in eachindex(filtered_data_tables_nd)
         end
     end
 
+    cut_dead_om = use_dead_om_map ? dead_om_veto(table, dead_om_intervals, dead_om_live) : falses(n_evt)
+
     keep = .!((use_same_calo_cut .& cut_same_calo) .| (use_kinks_cut .& cut_kinks) .| (use_om_cut .& (cut_om_size .| cut_om_range)) .| (use_vertex_region_cut .& cut_vertex_region))
+    keep .&= .!cut_dead_om
     filtered_data_tables_nd[i] = table[keep]
 end
 
@@ -274,7 +298,9 @@ flush(stdout)
 
 # STEP 2: Create DataProcessND objects.
 # Keep the original batch script's normalization to the full exposure.
-cached_names = [var_names_nd; String.(cut_column.(optimized_cuts))]
+# Typed explicitly: without optimized cuts the empty broadcast is a Vector{Any},
+# which DataProcessND rejects.
+cached_names = String[var_names_nd; String.(cut_column.(optimized_cuts))]
 cached_bounds = merge(var_bounds_nd, NamedTuple(cut_column(cut) => (0.0, Inf) for cut in optimized_cuts))
 processes_nd = [
     SNSensitivityEstimate.DataProcessND(

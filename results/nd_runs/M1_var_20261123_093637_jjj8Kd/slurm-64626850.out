@@ -511,4 +511,14 @@ creating process: bb0nuM1
 |       468 |      84239 | -5.7362e-04 | 14590.5551 s |         No | 
 |       469 |      84419 | -5.7362e-04 | 14604.5688 s |         No | 
 |       470 |      84599 | -5.7362e-04 | 14617.6767 s |         No | 
-|       471 |      84779 | 
+|       471 |      84779 | ****************************************************************
+*                      SLURM Batch System                      *
+*           IN2P3 Computing Centre, Villeurbanne FR            *
+****************************************************************
+Date: Mon Nov 23 04:09:16 PM CET 2026
+Job informations can be found using these commands:
+Accounting:
+sacct -j 64626850
+Efficiency:
+seff 64626850
+****************************************************************

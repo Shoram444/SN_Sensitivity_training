@@ -1,0 +1,2 @@
+phase,best_sensitivity,best_ROI,best_bkg,best_eff
+phase_4,1.502997701038063e22,"(energy_elec_sum = (1.15, 3.5), angle_3D_between_ep_em = (0.0, 180.0), delta_y_elec = (0.0, 200.0), delta_z_elec = (0.0, 200.0), diff_time_elec = (0.0, 2.0), energy_elec_1 = (0.35000000000000003, 2.25), energy_elec_2 = (0.35000000000000003, 3.5), __nd_cut_vertex_distance = (0.0, 300.0), __nd_cut_closest_gamma = (140.0, Inf), __nd_cut_closest_elec = (5.0, Inf), __nd_cut_closest_time_track = (50.0, Inf))",27560.910393936905,0.0460934

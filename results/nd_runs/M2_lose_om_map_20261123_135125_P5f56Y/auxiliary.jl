@@ -149,8 +149,9 @@ function save_background_report(output_dir, phase, signal_process, files, tables
     expected_roi = sum(summary.expected_roi)
     isapprox(expected_roi, best_bkg; atol = 1e-10) ||
         error("Recomputed ROI background ($expected_roi) does not match the optimization ($best_bkg)")
-    # Activities of different sources are not summed.
-    push!(summary, ("Total", missing, sum(summary.mc_events_roi), sum(summary.mc_events_0_4_mev),
+    # Activities of different sources are not summed. Base.missing: older
+    # generated analysis scripts define a global `missing`.
+    push!(summary, ("Total", Base.missing, sum(summary.mc_events_roi), sum(summary.mc_events_0_4_mev),
                     expected_roi, sum(summary.expected_0_4_mev),
                     sqrt(sum(abs2, summary.mc_stat_error_roi)),
                     sqrt(sum(abs2, summary.mc_stat_error_0_4_mev))))

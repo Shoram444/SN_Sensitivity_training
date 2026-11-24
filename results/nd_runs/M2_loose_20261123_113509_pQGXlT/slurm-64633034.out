@@ -38,3 +38,14 @@ creating process: bb0nuM2
 creating process: bb0nuM2
 creating process: bb0nuM2
 creating process: bb0nuM2
+****************************************************************
+*                      SLURM Batch System                      *
+*           IN2P3 Computing Centre, Villeurbanne FR            *
+****************************************************************
+Date: Tue Nov 24 12:30:50 AM CET 2026
+Job informations can be found using these commands:
+Accounting:
+sacct -j 64633034
+Efficiency:
+seff 64633034
+****************************************************************
