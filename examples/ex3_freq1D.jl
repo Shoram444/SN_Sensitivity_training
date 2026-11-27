@@ -69,7 +69,7 @@ processes = [
 signal_name = "bb0nu_foil_bulk"
 signal = SNSensitivityEstimate.get_process(signal_name, processes)[1]
 
-background_names = data_info.process[data_info.process .!= signal_name]
+background_names = data_info.process[data_info.process .!= signal_name .&& data_info.is_signal .== false]
 background = [SNSensitivityEstimate.get_process(String(name), processes)[1] for name in background_names]
 
 # STEP 2: The general idea of the 1D frequentist approach is to first find the most optimal ROI in 1 selected variable (in this case sumE) for a given signal process.
@@ -98,7 +98,7 @@ let
     bkg_processes = [p for p in processes if !p.signal]
     bkg_histograms = [SNSensitivityEstimate.get_bkg_counts_1D(p) for p in bkg_processes]
     signal_histogram = SNSensitivityEstimate.get_bkg_counts_1D(signal)
-    colors = ["#041E42", "#BE4D00", "#951272", "#006630", "#005C8A", "#FFB948", "#605643", "#302D23"] # get our supernemo colors
+    colors = ["#041E42", "#BE4D00", "#951272", "#006630", "#005C8A", "#FFB948", "#605643", "#302D23", "#D81B60", "#3F51B5"] # get our supernemo colors
     f = CairoMakie.Figure(size = (1800, 800), fontsize = 24)
     a1 = CairoMakie.Axis(f[1, 1], title = "Background model with signal overlay", xlabel = "sum of energies", ylabel = "expected counts", yscale = log10)
     a2 = CairoMakie.Axis(f[1, 2], title = "Zoom to ROI", xlabel = "sum of energies", ylabel = "expected counts")
@@ -119,11 +119,11 @@ let
     title = "Processes"
     
     ylims!(a1, 1e-3, 1e5)
-    ylims!(a2, 0, 5)
+    ylims!(a2, 0, 100)
     xlims!(a2, my_ROI[1], my_ROI[2])
 
     CairoMakie.Legend(f[1,3], elements, labels, title, patchsize = (45, 20))
-    save("data/out/ex3/my_roi_plot.png", f, px_per_unit = 2)
+    # save("data/out/ex3/my_roi_plot.png", f, px_per_unit = 2)
     f
 
 end
@@ -168,7 +168,7 @@ with_theme(theme_latexfonts()) do
     )
 
     CairoMakie.Colorbar(f[1, 2], p, label = "sensitivity (yr)", height = Relative(0.85))
-    save("data/out/ex3/frequentist_sensitivity_map.png", f, px_per_unit = 2)
+    # save("data/out/ex3/frequentist_sensitivity_map.png", f, px_per_unit = 2)
     f
 end
 
@@ -185,7 +185,7 @@ let
     bkg_processes = [p for p in processes if !p.signal]
     bkg_histograms = [SNSensitivityEstimate.get_bkg_counts_1D(p) for p in bkg_processes]
     signal_histogram = SNSensitivityEstimate.get_bkg_counts_1D(signal)
-    colors = ["#041E42", "#BE4D00", "#951272", "#006630", "#005C8A", "#FFB948", "#605643", "#302D23"]
+    colors = ["#041E42", "#BE4D00", "#951272", "#006630", "#005C8A", "#FFB948", "#605643", "#302D23", "#D81B60", "#3F51B5"]
     f = CairoMakie.Figure(size = (1800, 800), fontsize = 24)
     a1 = CairoMakie.Axis(f[1, 1], title = "Background model with best signal overlay", xlabel = "sum of energies", ylabel = "expected counts", yscale = log10)
     a2 = CairoMakie.Axis(f[1, 2], title = "Zoom to best ROI", xlabel = "sum of energies", ylabel = "expected counts")
@@ -224,7 +224,7 @@ let
     )
 
     CairoMakie.Legend(f[1,3], elements, labels, "Processes", patchsize = (45, 20))
-    save("data/out/ex3/best_roi_plot.png", f, px_per_unit = 2)
+    # save("data/out/ex3/best_roi_plot.png", f, px_per_unit = 2)
     f
 end
 

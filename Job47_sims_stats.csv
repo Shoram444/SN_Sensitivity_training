@@ -1,0 +1,14 @@
+process,N_per_file,files,name,ID,status,n_sim_true
+snemo_mc-20,2000000,389,Job47_Tl208_PMT_glass_bulk_reco_official,64745824,OK,7.78e8
+snemo_mc-18,2000000,497,Job47_Bi214_PMT_glass_bulk,64745824,OK,9.94e8
+snemo_mc-19,2000000,500,Job47_K40_PMT_glass_bulk,64746421,OK,1e9
+bb0nuM2,1000000,10,Job47_bb0nuM2_foil_bulk,64747383,OK,1e7
+bb0nu,1000000,10,Job47_bb0nu_foil_bulk,,OK,1e7
+bb0nuM1,1000000,10,Job47_bb0nuM1_foil_bulk,,OK,1e7
+bb,1000000,100,Job47_bb_foil_bulk,,OK,1e8
+Bi214_foil_bulk,1000000,100,Job47_Bi214_foil_bulk,,OK,1e8
+Bi214_foil_surface,1000000,10,Job47_Bi214_foil_surface,,OK,1e7
+Bi214_wire_surface,1000000,100,Job47_Bi214_wire_surface,,OK,1e8
+K40_foil_bulk,1000000,100,Job47_K40_foil_bulk,,OK,1e8
+Pa234m_foil_bulk,1000000,100,Job47_Pa234m_foil_bulk,,OK,1e8
+Tl208_foil_bulk,1000000,100,Job47_Tl208_foil_bulk,,OK,1e8

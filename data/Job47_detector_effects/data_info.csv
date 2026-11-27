@@ -1,0 +1,14 @@
+file_name,process,is_signal,activity,amount,time_s,n_sim
+data/Job47_detector_effects/Bi214_foil_bulk.root,Bi214_foil_bulk,false,1.0e-5,6.25,9.019296e7,1.0e8
+data/Job47_detector_effects/Bi214_foil_surface.root,Bi214_foil_surface,false,0.00011475,1.0,9.019296e7,1.0e8
+data/Job47_detector_effects/Bi214_wire_surface.root,Bi214_wire_surface,false,0.00218025,1.0,9.019296e7,1.0e8
+data/Job47_detector_effects/Tl208_foil_bulk.root,Tl208_foil_bulk,false,2.0e-6,6.25,9.019296e7,1.0e8
+data/Job47_detector_effects/Pa234m_foil_bulk.root,Pa234m_foil_bulk,false,17.3e-3,6.25,9.019296e7,1.0e8
+data/Job47_detector_effects/Pa234m_foil_bulk.root,Pa234m_foil_bulk,false,58.7e-3,6.25,9.019296e7,1.0e8
+data/Job47_detector_effects/bb0nu_foil_bulk.root,bb0nu_foil_bulk,true,1.615770810053139e-9,6.11,9.019296e7,1.0e7
+data/Job47_detector_effects/bb0nuM1_foil_bulk.root,bb0nuM1_foil_bulk,true,1.615770810053139e-9,6.11,9.019296e7,1.0e7
+data/Job47_detector_effects/bb0nuM2_foil_bulk.root,bb0nuM2_foil_bulk,true,1.615770810053139e-9,6.11,9.019296e7,1.0e7
+data/Job47_detector_effects/bb_foil_bulk.root,bb_foil_bulk,false,0.0018593450058148897,6.11,9.019296e7,1.0e8
+data/Job47_detector_effects/Tl208_PMT_glass_bulk_reco_official.root,Tl208_PMT_glass_bulk,false,40.0,1,9.019296e7,1.994e9
+data/Job47_detector_effects/Bi214_PMT_glass_bulk.root,Bi214_PMT_glass_bulk,false,140.8,1,9.019296e7,9.94e8
+data/Job47_detector_effects/K40_PMT_glass_bulk.root,K40_PMT_glass_bulk,false,418.0,1,9.019296e7,1e9
