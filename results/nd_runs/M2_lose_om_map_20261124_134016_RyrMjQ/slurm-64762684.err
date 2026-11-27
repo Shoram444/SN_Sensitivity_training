@@ -1,0 +1,111 @@
+WARNING: Method definition deepcopy(Observables.Observable{T} where T) in module MakieCore at /pbs/home/m/mpetro/sps_mpetro/PROGRAMS/.julia_sym/packages/MakieCore/dw3iH/src/attributes.jl:48 overwritten in module Makie at /pbs/home/m/mpetro/.julia/packages/Makie/WKgwk/src/attributes.jl:51.
+ERROR: Method overwriting is not permitted during Module precompilation. Use `__precompile__(false)` to opt-out of precompilation.
+WARNING: Method definition deepcopy(Observables.Observable{T} where T) in module MakieCore at /pbs/home/m/mpetro/sps_mpetro/PROGRAMS/.julia_sym/packages/MakieCore/dw3iH/src/attributes.jl:48 overwritten in module Makie at /pbs/home/m/mpetro/.julia/packages/Makie/WKgwk/src/attributes.jl:51.
+ERROR: Method overwriting is not permitted during Module precompilation. Use `__precompile__(false)` to opt-out of precompilation.
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0006-379717180caa is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0006-379717180caa is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0006-379717180caa is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+[ Info: Running sensitivity optimization for phase: phase_4, with signal: bb0nuM2, output will be saved to: /sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_lose_om_map_20261124_134016_RyrMjQ/results.csv
+[ Info: Packages loaded, loading data...
+[ Info: Bad OM list disabled; events in listed OMs are kept
+┌ Info: Dead OM map enabled
+│   oms = 459
+└   live_days = 157.13630898472888
+[ Info: Data loaded and filtered, applying Mathis's extra cuts...
+[ Info: Mathis's extra cuts applied, creating ND processes...
+┌ Warning: Optimized cut uses the package's >= or < interval boundary
+│   name = :closest_gamma
+└ @ Main /sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_lose_om_map_20261124_134016_RyrMjQ/analysis.jl:324
+┌ Warning: Optimized cut uses the package's >= or < interval boundary
+│   name = :closest_elec
+└ @ Main /sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_lose_om_map_20261124_134016_RyrMjQ/analysis.jl:324
+┌ Warning: Optimized cut uses the package's >= or < interval boundary
+│   name = :closest_track
+└ @ Main /sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_lose_om_map_20261124_134016_RyrMjQ/analysis.jl:324
+┌ Warning: Optimized cut uses the package's >= or < interval boundary
+│   name = :closest_time_track
+└ @ Main /sps/nemo/scratch/mpetro/Sensitivity_training/results/nd_runs/M2_lose_om_map_20261124_134016_RyrMjQ/analysis.jl:324
+[ Info: Defining the optimization problem...
+[ Info: Starting optimization with PSO algorithm...
+[ Info: Optimization finished, processing results...
+WARNING: Method definition deepcopy(Observables.Observable{T} where T) in module MakieCore at /pbs/home/m/mpetro/sps_mpetro/PROGRAMS/.julia_sym/packages/MakieCore/dw3iH/src/attributes.jl:48 overwritten in module Makie at /pbs/home/m/mpetro/.julia/packages/Makie/WKgwk/src/attributes.jl:51.
+ERROR: Method overwriting is not permitted during Module precompilation. Use `__precompile__(false)` to opt-out of precompilation.
+WARNING: Method definition deepcopy(Observables.Observable{T} where T) in module MakieCore at /pbs/home/m/mpetro/sps_mpetro/PROGRAMS/.julia_sym/packages/MakieCore/dw3iH/src/attributes.jl:48 overwritten in module Makie at /pbs/home/m/mpetro/.julia/packages/Makie/WKgwk/src/attributes.jl:51.
+ERROR: Method overwriting is not permitted during Module precompilation. Use `__precompile__(false)` to opt-out of precompilation.
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0006-37b66c5873f1 is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0006-37b66c5873f1 is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Warning: Module Makie with build ID ffffffff-ffff-ffff-0006-37b66c5873f1 is missing from the cache.
+│ This may mean Makie [ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a] does not support precompilation but is imported by a module that does.
+└ @ Base loading.jl:1948
+┌ Info: Bad OM list
+│   settings.use_bad_om_list = false
+└   length(bad_oms) = 0
+┌ Info: Dead OM map
+└   settings.use_dead_om_map = true
+┌ Info: Best ROI
+└   results.roi = (energy_elec_sum = (1.1, 2.8000000000000003), angle_3D_between_ep_em = (0.0, 180.0), delta_y_elec = (0.0, 260.0), delta_z_elec = (0.0, 225.0), diff_time_elec = (0.0, 2.0), energy_elec_1 = (0.35000000000000003, 3.5), energy_elec_2 = (0.35000000000000003, 2.3000000000000003), __nd_cut_vertex_distance = (0.0, 600.0), __nd_cut_closest_gamma = (40.0, Inf), __nd_cut_closest_elec = (0.0, Inf), __nd_cut_closest_track = (30.0, Inf), __nd_cut_closest_time_track = (0.0, Inf))
+┌ Info: Fixed numeric cuts
+└   [(cut.name, cut.comparison, cut.fixed) for cut = sel.fixed] = Tuple{Any, Any, Any}[]
+┌ Info: Reading bb
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/bb/phase_3/bb_phase_3.root"
+┌ Info: Reading bi_5_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/bi_5_pmt/phase_3/bi_5_pmt_phase_3.root"
+┌ Info: Reading bi_foil
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/bi_foil/phase_3/bi_foil_phase_3.root"
+┌ Info: Reading bi_g_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/bi_g_pmt/phase_3/bi_g_pmt_phase_3.root"
+┌ Info: Reading bi_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/bi_pmt/phase_3/bi_pmt_phase_3.root"
+┌ Info: Reading bi_x_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/bi_x_pmt/phase_3/bi_x_pmt_phase_3.root"
+┌ Info: Reading k
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/k/phase_3/k_phase_3.root"
+┌ Info: Reading k_5_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/k_5_pmt/phase_3/k_5_pmt_phase_3.root"
+┌ Info: Reading k_g_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/k_g_pmt/phase_3/k_g_pmt_phase_3.root"
+┌ Info: Reading k_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/k_pmt/phase_3/k_pmt_phase_3.root"
+┌ Info: Reading k_x_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/k_x_pmt/phase_3/k_x_pmt_phase_3.root"
+┌ Info: Reading pa
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/pa/phase_3/pa_phase_3.root"
+┌ Info: Reading radon
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/radon/phase_3/radon_phase_3.root"
+┌ Info: Reading radon_surface
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/radon_surface/phase_3/radon_surface_phase_3.root"
+┌ Info: Reading tl
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/tl/phase_3/tl_phase_3.root"
+┌ Info: Reading tl_5_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/tl_5_pmt/phase_3/tl_5_pmt_phase_3.root"
+┌ Info: Reading tl_g_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/tl_g_pmt/phase_3/tl_g_pmt_phase_3.root"
+┌ Info: Reading tl_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/tl_pmt/phase_3/tl_pmt_phase_3.root"
+┌ Info: Reading tl_x_pmt
+└   path = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/mathis_files/tl_x_pmt/phase_3/tl_x_pmt_phase_3.root"
+┌ Info: Reading data
+└   config.data = "/sps/nemo/scratch/mpetro/Sensitivity_training/data/real_data/run_3470-4427.root"
+┌ Warning: Ignoring unreadable run files outside the selection
+│   runs =
+│    3-element Vector{Int64}:
+│     3196
+│     4243
+│     4247
+└ @ Main /sps/nemo/scratch/mpetro/Sensitivity_training/scripts/compare_data_simulation.jl:322
+┌ Info: Data live time
+│   runs = 355
+│   first_run = 3470
+│   last_run = 4427
+│   live_days = 157.13630898472888
+└   span_of_run_start_days = 128.56671983184086
